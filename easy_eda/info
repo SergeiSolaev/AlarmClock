@@ -1,0 +1,555 @@
+{
+  "uuid": "7801c6c6ac5b43cc75a572666b5fc2b4",
+  "path": "Offline/Alarm_clock",
+  "name": "Alarm_clock",
+  "content": "",
+  "created_at": "2025-04-28 19:44:08",
+  "updated_at": "2025-07-07 22:09:53",
+  "stick": "",
+  "documents": [
+    {
+      "uuid": "fd5f024339d9355428839d79da143ff5",
+      "title": "Sheet_1",
+      "description": "",
+      "docType": "1",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {
+        "62f8137465cdeec1acfc1ae5a7704340": 1,
+        "d5d6712132b5521a0dce0b0339e7720a": 1,
+        "8594bd0e240541488ce2438b0d2f7d66": 1,
+        "d60ddd26ceea45ec94921212cce9e85c": 1,
+        "fa33d4808b42d46b96893a5da4a98304": 1,
+        "bb009484ef804a24ac5d18c54b249586": 28,
+        "fd11c9e744c44aeab6011e8bd4c3ea86": 8,
+        "b0489b47ea5b4c2da65b8bd9115af592": 1,
+        "cf6eca9c9efe444882712b3d5cec1885": 1,
+        "29c14b7f382f467c8dde491b0384464a": 1,
+        "fc3d9992375944669a48a4c401c32459": 1,
+        "89026c0e23ca49dcb85d26a1d0805b33": 6,
+        "f426025f26228162dab8da65d9abf4e1": 1,
+        "3ec77201bbcd4ecd8722658d581a4e60": 7,
+        "5129d2cb7f8e600e7152a0ee6ec60b1c": 1,
+        "cd08fb04650a434088fcd9a4f91eb316": 1,
+        "3eca2e89d67b4fe5984cc741b1d2957c": 1,
+        "f5c7b460fc194479953ece8c6d942520": 2,
+        "8d8639b3f0164e6391e9853281afae38": 2,
+        "2fa53d590f544429ab8fcbd581d715c1": 2,
+        "df5aa08f6787443fa58b30ab04d6492e": 4,
+        "d8c4aae8cb1d4805b5403091771ec923": 1,
+        "8fc54ec6dadb4abba9f257dbcb08e919": 1
+      },
+      "BOM": [
+        [
+          "Value",
+          "Quantity",
+          "Package",
+          "Components",
+          "CustomPara"
+        ],
+        [
+          "DFPLAYER-MINI-MODULE",
+          1,
+          "DFPLAYER-MINI-MODULE",
+          "1",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "CR2032-BS-2-1",
+          1,
+          "BAT-TH_BS-2-1",
+          "B1",
+          {
+            "Manufacturer Part": "BS-2-1",
+            "Manufacturer": "Q&J",
+            "Supplier": "LCSC",
+            "Supplier Part": "C70376"
+          }
+        ],
+        [
+          "HDR-F-2.54_1x2",
+          7,
+          "HDR-F-2.54_1X2",
+          "BAT,CHRG,GRN,LGHT,RED,SPK,VIBRO",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "LCSC",
+            "Supplier Part": "C49661"
+          }
+        ],
+        [
+          "100p",
+          2,
+          "C0603",
+          "C1,C2",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "22p",
+          2,
+          "C0603",
+          "C3,C4",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "0.1u",
+          2,
+          "C0603",
+          "C5,C6",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "1u",
+          2,
+          "C0603",
+          "C7,C14",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "10u",
+          4,
+          "C0805",
+          "C8,C9,C10,C13",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "22u",
+          2,
+          "C0805",
+          "C11,C12",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "100u",
+          1,
+          "CAP-D5.0×F2.0",
+          "C15",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "ISP6PIN",
+          1,
+          "ISP 6 PIN",
+          "CN1",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "SS34-SMA",
+          1,
+          "SMA_L4.3-W2.6-LS5.2-RD",
+          "D1",
+          {
+            "Manufacturer Part": "SS34-SMA",
+            "Manufacturer": "null",
+            "Supplier": "LCSC",
+            "Supplier Part": "C9900004127"
+          }
+        ],
+        [
+          "SS34-DO123",
+          2,
+          "SOD-123F_L2.7-W1.6-LS3.8-RD",
+          "D2,D3",
+          {
+            "Manufacturer Part": "SS34-DO123",
+            "Manufacturer": "null",
+            "Supplier": "LCSC",
+            "Supplier Part": "C9900005212"
+          }
+        ],
+        [
+          "K4-12×12_SMD",
+          4,
+          "KEY-SMD_4P-L12.0-W12.0-P5.00-LS15.2",
+          "KEY1,KEY2,KEY3,KEY4",
+          {
+            "Manufacturer Part": "K2-1103SP-E4SW-04",
+            "Manufacturer": "韩国韩荣",
+            "Supplier": "LCSC",
+            "Supplier Part": "C136697"
+          }
+        ],
+        [
+          "LED-0603_G",
+          1,
+          "LED0603_GREEN",
+          "LED1",
+          {
+            "Manufacturer Part": "19-217/GHC-YR1S2/3T",
+            "Manufacturer": "EVERLIGHT(台湾亿光)",
+            "Supplier": "LCSC",
+            "Supplier Part": "C72043"
+          }
+        ],
+        [
+          "AO3401A",
+          1,
+          "SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR",
+          "Q1",
+          {
+            "Manufacturer Part": "AO3401A",
+            "Manufacturer": "FUXINSEMI(富芯森美)",
+            "Supplier": "LCSC",
+            "Supplier Part": "C5380686"
+          }
+        ],
+        [
+          "AO3442A",
+          2,
+          "SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR",
+          "Q2,Q3",
+          {
+            "Manufacturer Part": "AO3442A",
+            "Manufacturer": "UMW(友台半导体)",
+            "Supplier": "LCSC",
+            "Supplier Part": "C545579"
+          }
+        ],
+        [
+          "10k",
+          12,
+          "R0603",
+          "R1,R2,R3,R5,R6,R7,R8,R18,R20,R21,R25,R26",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "300",
+          1,
+          "R0603",
+          "R4",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "1k",
+          8,
+          "R0603",
+          "R9,R10,R13,R14,R27,R28,R29,R30",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "1k2",
+          1,
+          "R0603",
+          "R11",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "0,4",
+          1,
+          "R0603",
+          "R12",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "16k",
+          1,
+          "R0603",
+          "R15",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "2k2",
+          1,
+          "R0603",
+          "R16",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "100",
+          3,
+          "R0603",
+          "R17,R19,R22",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "150",
+          2,
+          "R1206",
+          "R23,R24",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "DS3231SN#",
+          1,
+          "SOIC-16_L10.3-W7.5-P1.27-LS10.3-BL",
+          "U1",
+          {
+            "Manufacturer Part": "DS3231SN#T&R",
+            "Manufacturer": "ADI(亚德诺)/MAXIM(美信)",
+            "Supplier": "LCSC",
+            "Supplier Part": "C9866"
+          }
+        ],
+        [
+          "TM1637",
+          1,
+          "SOP-20_L12.8-W7.5-P1.27-LS10.4-BL",
+          "U2",
+          {
+            "Manufacturer Part": "TM1637",
+            "Manufacturer": "TM(天微)",
+            "Supplier": "LCSC",
+            "Supplier Part": "C20001"
+          }
+        ],
+        [
+          "5643BR 7Segment",
+          1,
+          "7SEGMENT056",
+          "U3",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "ATMEGA328P-AU",
+          1,
+          "TQFP-32_L7.0-W7.0-P0.80-LS9.0-BL",
+          "U4",
+          {
+            "Manufacturer Part": "ATMEGA328P-AU",
+            "Manufacturer": "MICROCHIP(美国微芯)",
+            "Supplier": "LCSC",
+            "Supplier Part": "C14877"
+          }
+        ],
+        [
+          "16MHZ HC49SMT",
+          1,
+          "CRYSTAL-SMD_L11.4-W4.8-LS12.7",
+          "U5",
+          {
+            "Manufacturer Part": "XTAL_HC49SMT",
+            "Manufacturer": "null",
+            "Supplier": "LCSC",
+            "Supplier Part": "C9900001625"
+          }
+        ],
+        [
+          "TP4056X-435-ESOP8",
+          1,
+          "ESOP-8_L4.9-W3.9-P1.27-LS6.0-BL-EP",
+          "U6",
+          {
+            "Manufacturer Part": "TP4056X-435-ESOP8",
+            "Manufacturer": "null",
+            "Supplier": "LCSC",
+            "Supplier Part": "C3294513"
+          }
+        ],
+        [
+          "MT3608",
+          1,
+          "SOT-23-6_L2.9-W1.6-P0.95-LS2.8-BL",
+          "U7",
+          {
+            "Manufacturer Part": "MT3608",
+            "Manufacturer": "西安航天民芯",
+            "Supplier": "LCSC",
+            "Supplier Part": "C84817"
+          }
+        ],
+        [
+          "22uH",
+          1,
+          "IND-SMD_L7.3-W7.3",
+          "U8",
+          {
+            "Manufacturer Part": "XRRH74-220M",
+            "Manufacturer": "XR(祥如)",
+            "Supplier": "LCSC",
+            "Supplier Part": "C5339522"
+          }
+        ]
+      ],
+      "updateTime": 1749878499,
+      "createTime": 1745855049,
+      "histories": [],
+      "created_at": "2025-04-28 19:44:09",
+      "updated_at": "2025-06-14 09:21:39"
+    },
+    {
+      "uuid": "22264a8ed63018d82ebb70427afc6120",
+      "puuid": "7801c6c6ac5b43cc75a572666b5fc2b4",
+      "title": "PCB_Alarm_clock",
+      "filename": "PCB_Alarm_clock.json",
+      "description": "",
+      "docType": "3",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {
+        "398691f1f785460098bbe5ee6590333c": 28,
+        "36b1306a115341f4b4d9407fb34974e0": 7,
+        "2ee8eb13a0124a108e622ce40c0c25a8": 6,
+        "1ea2e7045b10400cba09c2b065998c9f": 2,
+        "bade90667a6e4731855e9a223387b8a6": 3,
+        "8e9b1be4bcb6420dbd1d09bf04b02792": 2,
+        "9a066f903e65476fa74739d5e9b0ceb9": 1,
+        "1f36721b1ecd41a3b296be738839c6c6": 1,
+        "25a043cd6bfe4528a121551d6550b565": 1,
+        "9c6dab9dc91e4b929269cb3454d6d713": 1,
+        "f8151fdc728a41ebbc304e11d39e5437": 8,
+        "7b706fa666744f94a830dffb572df5db": 1,
+        "2368f58a489543798b8387353af2ca86": 1,
+        "deefac3aba37491e8989b2c1b533262b": 1,
+        "c3a3a479239346a8bb3da07840bfe89e": 1,
+        "841c9505ed154d90bc4c746ed63ca41a": 1,
+        "d5ffd9430bcb4de5bc30146f302b28e0": 1,
+        "7568fee05bc44581b2c32625ae15b3f8": 1,
+        "b7243d11a5f04fb7894887aaa3569585": 1,
+        "5b1f929b487f4a238408feff88c95f19": 1,
+        "b48b9c9358624d9abfe7458b9b7ac67e": 4,
+        "9ab4ba27487f4e968ec8c676394520e2": 1
+      },
+      "BOM": [
+        [
+          "Value",
+          "Quantity",
+          "Package",
+          "Components",
+          "CustomPara"
+        ],
+        [
+          "7-SEGMENT-4DIGIT-COUNTERPTH",
+          1,
+          "7-SEGMENT-4DIGIT-COUNTER",
+          "DISP1",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "TM1637",
+          1,
+          "SOP-20_L12.8-W7.5-P1.27-LS10.4-BL",
+          "U2",
+          {
+            "Manufacturer Part": "TM1637",
+            "Manufacturer": "TM(天微)",
+            "Supplier": "LCSC",
+            "Supplier Part": "C20001"
+          }
+        ],
+        [
+          "DS3231SN#",
+          1,
+          "SOIC-16_L10.3-W7.5-P1.27-LS10.3-BL",
+          "U1",
+          {
+            "Manufacturer Part": "DS3231SN#T&R",
+            "Manufacturer": "ADI(亚德诺)/MAXIM(美信)",
+            "Supplier": "LCSC",
+            "Supplier Part": "C9866"
+          }
+        ]
+      ],
+      "updateTime": 1751911793,
+      "createTime": 1745856653,
+      "histories": [],
+      "created_at": "2025-04-28 20:10:53",
+      "updated_at": "2025-07-07 22:09:53"
+    }
+  ],
+  "sort": [],
+  "title": "Alarm_clock",
+  "foldername": "Alarm_clock",
+  "schfilename": "Alarm_clock.json",
+  "schfilemtime": 1749878499188
+}

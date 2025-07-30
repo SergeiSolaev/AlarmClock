@@ -1,0 +1,6 @@
+.archive/
+.pio/
+.vscode/
+fritzing/
+mp3/
+!mp3/0009_Battery_Discharge.mp3
