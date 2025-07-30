@@ -326,7 +326,7 @@ void showVoltage(double voltage)
 // Контроль состояния батареи. При пазряде включается звуковой сигнал
 void batteryControl(double voltage)
 {
-  double voltageDischargeTreshold = 3.5;
+  double voltageDischargeTreshold = 3.55;
 
   if (voltage < voltageDischargeTreshold && hrs > 18 && hrs < 22 && !alarmSignal)
   {
@@ -337,7 +337,7 @@ void batteryControl(double voltage)
     delay(100);
     myMP3.playFromMP3Folder(8);
   }
-  if (voltage > 3.5 && batteryDischarge)
+  if (voltage > voltageDischargeTreshold && batteryDischarge)
   {
     batteryDischarge = false;
     digitalWrite(MUSIC_MOSFET, LOW);
@@ -815,7 +815,8 @@ void stopMusic()
 {
   myMP3.stop();
   isPlaying = false;
-  delay(50);
+  delay(500);
+  digitalWrite(MUSIC_MOSFET, LOW);
 }
 
 void setVolumeMusic()
