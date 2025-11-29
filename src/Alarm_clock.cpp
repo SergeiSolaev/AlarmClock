@@ -723,7 +723,7 @@ void setVolume()
   disp.displayInt(currentVolume);
   myMP3.volume(currentVolume);
   delay(50);
-  myMP3.playFromMP3Folder(8);
+  myMP3.playFolder(1, 1);
   while (true)
   {
     // Увеличение громкости
@@ -737,7 +737,7 @@ void setVolume()
         {
           myMP3.volume(currentVolume);
           delay(50);
-          myMP3.playFromMP3Folder(8);
+          myMP3.playFolder(1, 1);
           setVolTimer = millis();
         }
       }
@@ -753,7 +753,7 @@ void setVolume()
         {
           myMP3.volume(currentVolume);
           delay(50);
-          myMP3.playFromMP3Folder(8);
+          myMP3.playFolder(1, 1);
           setVolTimer = millis();
         }
       }
