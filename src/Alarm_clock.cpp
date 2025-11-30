@@ -1,3 +1,6 @@
+// добавить таймер
+// вторую кнопку добавить показ температуры  и даты
+
 #include "Arduino.h"
 #include "EEPROM.h"
 #include "math.h"
@@ -27,6 +30,7 @@ GyverTM1637 disp(CLK, DIO);
 uint32_t clockTimer, updateTimeTimer, alarmStartTime, vibroTimer, batteryControlTimer, playMusicDisplayOfTimer, snoozeStartTime;
 uint32_t btnTimer = 0;
 uint32_t alarmDuration = 60000; // Длительность сигнала будильника
+uint32_t snoozeDuration = 300000; // Перерыв для snooze
 
 // Флаги состояний
 boolean secondsDots, alarmSignal, batteryDischarge, blockButton, menuSelectAlarm;
@@ -36,14 +40,16 @@ boolean vibroOn = true; // Переменная используется для 
 boolean isPlaying = false;
 boolean flashLightOn = false;
 boolean snoozeActive = false;
+boolean alarmTriggered;
 
 // Переменные времени и настроек
 byte hrs, min, sec, alarmHrs, alarmMin, menuSelect;
-byte alarmVolume = 20;
+byte alarmVolume;
 byte alarmOnDefault = false;
 byte alarmHrsDefault = 12; // Значения будильника, которые записываются в EEPROM при первом включении
 byte alarmMinDefault = 00;
 byte alarmVolumeDefault = 20;
+byte snoozeCount;
 
 // Приветственное сообщение
 byte welcomeBanner[] = {_H, _E, _L, _L, _O, _empty, _S, _E, _r, _G, _E, _i};
@@ -59,7 +65,7 @@ void updateTime();
 void clock(byte hrs, byte min);
 void isAlarm();
 void alarm();
-void snooze();
+void snoozeButton();
 void alarmStopButton();
 void alarmStopTime();
 int readButton(int btnnum);
@@ -92,33 +98,44 @@ void setup()
   initializeClock();
   pinsConfig();
   powerConfig();
-  attachInterrupt(0, wakeUp, FALLING);
-  attachInterrupt(1, isAlarm, FALLING);
+  attachInterrupt(0, wakeUp, FALLING); //Обработчик прерывания для включения от кнопки
+  attachInterrupt(1, isAlarm, FALLING); //Обработчик прерывания для включения от сигнала DS3231
   testVibro();
   disp.runningString(welcomeBanner, sizeof(welcomeBanner), 250); // Приветсвтие при включении
 }
 
 void loop()
 {
-  // Если будильник сработал блокируем вызов меню при нажатии кнопок
-  // Останавливаем будильник по нажатию кнопки или по истечении заданного времени
+  // Данное условие обеспечивает включение звукового сигнала.
+  if (alarmTriggered)
+  {
+    startAlarm();
+    alarmTriggered = false;
+  }
+
+  // Если будильник сработал блокируем все функции кнопок.
+  // Ждём от нажатие кнопок для остановки будильника или для откладывания или остановки по времени.
   if (alarmSignal)
   {
     blockButton = true;
     alarmStopButton();
     alarmStopTime();
-    snooze();
+    snoozeButton();
+    // После 30 секунд сработки будильника включаем вибрацию.
     if (alarmSignal && (millis() - alarmStartTime > 30000))
     {
       startVibro();
     }
   }
 
+  // Если активировали режим "Вздремнуть" то ждём 5 минут и запускаем будильник снова.
   if (snoozeActive)
   {
-    if (millis() - snoozeStartTime > 60000)
+    if (millis() - snoozeStartTime > snoozeDuration)
     {
       alarm();
+      snoozeStartTime = millis();
+      snoozeCount = snoozeCount + 1;
     }
   }
 
@@ -284,6 +301,7 @@ void clock(byte hrs, byte min)
 
 void isAlarm()
 {
+  snoozeCount = 0;
   alarm();
 }
 
@@ -292,14 +310,14 @@ void alarm()
 {
   if (alarmOn && !alarmSignal)
   {
-    startAlarm();
+    alarmTriggered = true;
     alarmSignal = true;
     clockOn = true;
     alarmStartTime = millis();
   }
 }
 
-void snooze()
+void snoozeButton()
 {
   if (readButton(BTN_3) || readButton(BTN_4))
   {
@@ -309,8 +327,18 @@ void snooze()
     stopAlarm();
     blockButton = false;
     alarmStartTime = 0; // Сбрасываем таймер при остановке будильника
-    snoozeActive = true;
-    snoozeStartTime = millis();
+    if (snoozeCount < 3)
+    {
+      snoozeActive = true;
+      snoozeStartTime = millis(); // Запускаем таймер для snooze
+    }
+    if (snoozeCount > 3)
+    {
+      snoozeActive = false;
+      // Уход в сон после всех повторов
+      clockOn = false;
+      enterSleepMode();
+    }
   }
 }
 
@@ -332,7 +360,7 @@ void alarmStopButton()
 // Остановка сработанного сигнала будильника по истечении времени.(Если пользователь не остановил сигнал с кнопок)
 void alarmStopTime()
 {
-  if (millis() - alarmStartTime >= alarmDuration)
+  if (millis() - alarmStartTime >= alarmDuration && alarmSignal)
   {
     rtc.clearAlarm(1);
     alarmSignal = false;
@@ -340,6 +368,18 @@ void alarmStopTime()
     stopAlarm();
     blockButton = false;
     alarmStartTime = 0; // Сбрасываем таймер при остановке будильника
+    if (snoozeCount < 3)
+    {
+      snoozeActive = true;
+      snoozeStartTime = millis(); // Запускаем таймер для snooze
+    }
+    if (snoozeCount > 3)
+    {
+      snoozeActive = false;
+      // Уход в сон после всех повторов
+      clockOn = false;
+      enterSleepMode();
+    }
   }
 }
 
@@ -446,7 +486,7 @@ void batteryControl(double voltage)
     delay(1000);
     myMP3.volume(25);
     delay(100);
-    myMP3.playFromMP3Folder(8);
+    myMP3.playFolder(1, 1);
     delay(1500);
     digitalWrite(MUSIC_MOSFET, LOW);
   }
@@ -464,7 +504,7 @@ void startAlarm()
   delay(100);
   myMP3.volume(alarmVolume);
   delay(100);
-  myMP3.playFromMP3Folder(random(1, 8));
+  myMP3.playFolder(2, random(1, 8));
 }
 
 // Остановка музыки
@@ -716,7 +756,7 @@ void setTime()
 // Установка уровня громкости
 void setVolume()
 {
-  byte currentVolume = EEPROM.read(3); // Начальное значение громкости
+  byte currentVolume = alarmVolume; // Начальное значение громкости
   uint32_t setVolTimer;
   digitalWrite(MUSIC_MOSFET, HIGH);
   delay(1000);
