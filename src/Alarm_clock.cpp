@@ -513,7 +513,7 @@ void showTemperature()
   disp.displayClock(whole_part, 0);
   disp.displayByte(2, DEG_SYMBOL_MASK);
   disp.displayByte(3, _C);
-  delay(2000);
+  delay(1000);
 }
 
 void showDate()
