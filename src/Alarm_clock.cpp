@@ -200,7 +200,6 @@ void loop()
 // Инициализация устройств и загрузка настроек
 void initializeClock()
 {
-  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); Раскоментировать строку для установки времени часов с компьютера
   Serial.begin(9600);
   if (EEPROM.read(0) == 255)
   {                                    // 255 это значение записанное в ячейке EEPROM по умолчанию в ардуино
@@ -219,6 +218,7 @@ void initializeClock()
     EEPROM.update(3, alarmVolumeDefault);
   }
   rtc.begin();
+  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); Раскоментировать строку для установки времени часов с компьютера
   rtc.clearAlarm(1);
   alarmHrs = EEPROM.read(0);
   alarmMin = EEPROM.read(1);
