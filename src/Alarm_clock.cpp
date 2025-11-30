@@ -1,5 +1,4 @@
 // добавить таймер
-// вторую кнопку добавить показ температуры  и даты
 
 #include "Arduino.h"
 #include "EEPROM.h"
@@ -29,7 +28,7 @@ GyverTM1637 disp(CLK, DIO);
 // Таймеры
 uint32_t clockTimer, updateTimeTimer, alarmStartTime, vibroTimer, batteryControlTimer, playMusicDisplayOfTimer, snoozeStartTime;
 uint32_t btnTimer = 0;
-uint32_t alarmDuration = 60000; // Длительность сигнала будильника
+uint32_t alarmDuration = 60000;   // Длительность сигнала будильника
 uint32_t snoozeDuration = 300000; // Перерыв для snooze
 
 // Флаги состояний
@@ -73,6 +72,7 @@ void brightness();
 double voltageMeasure();
 void showVoltage(double voltage);
 void batteryControl(double voltage);
+void showTemperature();
 void startAlarm();
 void stopAlarm();
 void startVibro();
@@ -98,8 +98,8 @@ void setup()
   initializeClock();
   pinsConfig();
   powerConfig();
-  attachInterrupt(0, wakeUp, FALLING); //Обработчик прерывания для включения от кнопки
-  attachInterrupt(1, isAlarm, FALLING); //Обработчик прерывания для включения от сигнала DS3231
+  attachInterrupt(0, wakeUp, FALLING);  // Обработчик прерывания для включения от кнопки
+  attachInterrupt(1, isAlarm, FALLING); // Обработчик прерывания для включения от сигнала DS3231
   testVibro();
   disp.runningString(welcomeBanner, sizeof(welcomeBanner), 250); // Приветсвтие при включении
 }
@@ -173,6 +173,12 @@ void loop()
   if (readButton(BTN_2) == 2 && !blockButton)
   {
     clockOn = false;
+  }
+
+  // Вкл/выкл отображение часов(для энергосбережения) уход в сон при нажатии более трёх секунд
+  if (readButton(BTN_2) == 1 && !blockButton)
+  {
+    showTemperature();
   }
 
   // Показать напряжение батареи
@@ -495,6 +501,19 @@ void batteryControl(double voltage)
     batteryDischarge = false;
     digitalWrite(MUSIC_MOSFET, LOW);
   }
+}
+
+void showTemperature()
+{
+  const uint8_t DEG_SYMBOL_MASK = 0b01100011; 
+  float temperature_f = rtc.getTemperature();
+  // Целая часть
+  int whole_part = (int)temperature_f;
+  disp.point(false);
+  disp.displayClock(whole_part, 0);
+  disp.displayByte(2, DEG_SYMBOL_MASK);
+  disp.displayByte(3,_C);
+  delay(2000);
 }
 
 // Воспроизведение сигнала будильника
