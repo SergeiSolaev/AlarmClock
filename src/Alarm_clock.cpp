@@ -1,5 +1,3 @@
-// добавить таймер
-
 #include "Arduino.h"
 #include "EEPROM.h"
 #include "math.h"
@@ -73,6 +71,7 @@ double voltageMeasure();
 void showVoltage(double voltage);
 void batteryControl(double voltage);
 void showTemperature();
+void showDate();
 void startAlarm();
 void stopAlarm();
 void startVibro();
@@ -179,6 +178,7 @@ void loop()
   if (readButton(BTN_2) == 1 && !blockButton)
   {
     showTemperature();
+    showDate();
   }
 
   // Показать напряжение батареи
@@ -505,15 +505,29 @@ void batteryControl(double voltage)
 
 void showTemperature()
 {
-  const uint8_t DEG_SYMBOL_MASK = 0b01100011; 
+  const uint8_t DEG_SYMBOL_MASK = 0b01100011;
   float temperature_f = rtc.getTemperature();
   // Целая часть
   int whole_part = (int)temperature_f;
   disp.point(false);
   disp.displayClock(whole_part, 0);
   disp.displayByte(2, DEG_SYMBOL_MASK);
-  disp.displayByte(3,_C);
+  disp.displayByte(3, _C);
   delay(2000);
+}
+
+void showDate()
+{
+    DateTime now = rtc.now();
+    int currentYear = now.year();
+    int currentMonth = now.month();
+    int currentDay = now.day();
+    disp.displayInt(currentYear);
+    delay(1000);
+    disp.displayInt(currentMonth);
+    delay(1000);
+    disp.displayInt(currentDay);
+    delay(1000);
 }
 
 // Воспроизведение сигнала будильника
