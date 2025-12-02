@@ -40,7 +40,7 @@ boolean snoozeActive = false;
 boolean alarmTriggered;
 
 // Переменные времени и настроек
-byte hrs, min, sec, alarmHrs, alarmMin, menuSelect;
+byte year, month, day, hrs, min, sec, alarmHrs, alarmMin, menuSelect;
 byte alarmVolume;
 byte alarmOnDefault = false;
 byte alarmHrsDefault = 12; // Значения будильника, которые записываются в EEPROM при первом включении
@@ -50,6 +50,8 @@ byte snoozeCount;
 
 // Приветственное сообщение
 byte welcomeBanner[] = {_H, _E, _L, _L, _O, _empty, _S, _E, _r, _G, _E, _i};
+// Сообщение "Зарядите батарею"
+byte chargeBattery[] = {_C, _H, _A, _r, _G, _E, _empty, _b, _A, _t, _t, _E, _r, _Y};
 
 // Прототипы функций
 void initializeClock();
@@ -58,7 +60,7 @@ void powerConfig();
 void testVibro();
 void enterSleepMode();
 void wakeUp();
-void updateTime();
+void updateDateTime();
 void clock(byte hrs, byte min);
 void isAlarm();
 void alarm();
@@ -142,7 +144,7 @@ void loop()
   // Периодичность раз в секунду
   if (millis() - updateTimeTimer > 1000)
   {
-    updateTime();
+    updateDateTime();
     updateTimeTimer = millis();
   }
 
@@ -167,18 +169,11 @@ void loop()
   {
     menu();
   }
-
+  
   // Вкл/выкл отображение часов(для энергосбережения) уход в сон при нажатии более трёх секунд
   if (readButton(BTN_2) == 2 && !blockButton)
   {
     clockOn = false;
-  }
-
-  // Вкл/выкл отображение часов(для энергосбережения) уход в сон при нажатии более трёх секунд
-  if (readButton(BTN_2) == 1 && !blockButton)
-  {
-    showTemperature();
-    showDate();
   }
 
   // Показать напряжение батареи
@@ -218,7 +213,7 @@ void initializeClock()
     EEPROM.update(3, alarmVolumeDefault);
   }
   rtc.begin();
-  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); Раскоментировать строку для установки времени часов с компьютера
+  //rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); Раскоментировать строку для установки времени часов с компьютера
   rtc.clearAlarm(1);
   alarmHrs = EEPROM.read(0);
   alarmMin = EEPROM.read(1);
@@ -228,7 +223,7 @@ void initializeClock()
   myMP3.begin(Serial, true);
   disp.clear();
   disp.brightness(7); // Яркость, 0 - 7 (минимум - максимум)
-  updateTime();
+  updateDateTime();
 }
 
 // Конфигурация пинов
@@ -281,9 +276,12 @@ void wakeUp()
 }
 
 // Получение времени из rtc DS3231
-void updateTime()
+void updateDateTime()
 {
   DateTime now = rtc.now();
+  year = now.year();
+  month = now.month();
+  day = now.day();
   hrs = now.hour();
   min = now.minute();
   sec = now.second();
@@ -480,61 +478,58 @@ void showVoltage(double voltage)
   delay(1000);
 }
 
-// Контроль состояния батареи. При пазряде включается звуковой сигнал
+// Контроль состояния батареи. При разряде включается вибросигнал и бегущая строка
 void batteryControl(double voltage)
 {
-  double voltageDischargeTreshold = 3.55;
+  double voltageDischargeTreshold = 3.6;
 
-  if (voltage < voltageDischargeTreshold && hrs > 18 && hrs < 21 && !alarmSignal)
+  if (voltage < voltageDischargeTreshold && hrs > 18 && hrs < 22 && !alarmSignal)
   {
     batteryDischarge = true;
-    digitalWrite(MUSIC_MOSFET, HIGH);
-    delay(1000);
-    myMP3.volume(25);
-    delay(100);
-    myMP3.playFolder(1, 1);
-    delay(1500);
-    digitalWrite(MUSIC_MOSFET, LOW);
+    testVibro();
+    disp.clear();
+    disp.point(false);
+    disp.runningString(chargeBattery, sizeof(chargeBattery), 250 );
   }
   if (voltage > voltageDischargeTreshold && batteryDischarge)
   {
     batteryDischarge = false;
-    digitalWrite(MUSIC_MOSFET, LOW);
   }
 }
 
+// Показать температуру
 void showTemperature()
 {
   const uint8_t DEG_SYMBOL_MASK = 0b01100011;
   float temperature_f = rtc.getTemperature();
   // Целая часть
   int whole_part = (int)temperature_f;
+  disp.clear();
   disp.point(false);
   disp.displayClock(whole_part, 0);
   disp.displayByte(2, DEG_SYMBOL_MASK);
   disp.displayByte(3, _C);
-  delay(1000);
+  delay(1500);
 }
 
+// Показать дату
 void showDate()
 {
-    DateTime now = rtc.now();
-    int currentYear = now.year();
-    int currentMonth = now.month();
-    int currentDay = now.day();
-    disp.displayInt(currentYear);
-    delay(1000);
-    disp.displayInt(currentMonth);
-    delay(1000);
-    disp.displayInt(currentDay);
-    delay(1000);
+  disp.clear();
+  disp.point(false);
+  disp.displayInt(year);
+  delay(1500);
+  disp.displayInt(month);
+  delay(1500);
+  disp.displayInt(day);
+  delay(1500);
 }
 
 // Воспроизведение сигнала будильника
 void startAlarm()
 {
   digitalWrite(MUSIC_MOSFET, HIGH);
-  delay(100);
+  delay(500);
   myMP3.volume(alarmVolume);
   delay(100);
   myMP3.playFolder(2, random(1, 8));
@@ -767,7 +762,7 @@ void setTime()
       rtc.adjust(newTime); // Устанавливаем новое время
 
       // Обновляем глобальные переменные времени
-      updateTime();
+      updateDateTime();
 
       disp.point(false);
       disp.displayByte(_d, _O, _n, _E);
@@ -792,7 +787,7 @@ void setVolume()
   byte currentVolume = alarmVolume; // Начальное значение громкости
   uint32_t setVolTimer;
   digitalWrite(MUSIC_MOSFET, HIGH);
-  delay(1000);
+  delay(500);
   disp.displayInt(currentVolume);
   myMP3.volume(currentVolume);
   delay(50);
@@ -839,7 +834,7 @@ void setVolume()
       EEPROM.update(3, alarmVolume);
       myMP3.volume(alarmVolume);
       disp.displayByte(_d, _O, _n, _E); // "donE"
-      delay(1000);
+      delay(500);
       digitalWrite(MUSIC_MOSFET, LOW);
       break;
     }
@@ -848,7 +843,7 @@ void setVolume()
     if (readButton(BTN_1))
     {
       disp.displayByte(_E, _S, _C, _empty); // "ESC "
-      delay(1000);
+      delay(500);
       digitalWrite(MUSIC_MOSFET, LOW);
       break;
     }
@@ -968,10 +963,10 @@ void playMusicMenu()
 void playMusic()
 {
   digitalWrite(MUSIC_MOSFET, HIGH);
-  delay(1000);
+  delay(500);
   myMP3.volume(20);
   delay(50);
-  myMP3.playFromMP3Folder(1);
+  myMP3.playFolder(1,1);
   delay(50);
   myMP3.startRepeatPlay();
   isPlaying = true;
