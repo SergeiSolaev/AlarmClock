@@ -5,6 +5,7 @@
 #include "RTClib.h"
 #include "GyverTM1637.h"
 #include "GyverPower.h"
+#include "EncButton.h"
 
 // Константы для пинов
 #define BTN_1 2 // Pulup подтяжка(к "+" питания), когда нажата возвращает 0
@@ -23,9 +24,14 @@ DFPlayerMini_Fast myMP3;
 RTC_DS3231 rtc; // RTC DS3231 подключается к SDA – A4, SCL – A5
 GyverTM1637 disp(CLK, DIO);
 
+// Создаем объекты кнопок с использованием библиотеки EncButton
+Button btn1(BTN_1, INPUT_PULLUP, LOW);
+Button btn2(BTN_2, INPUT_PULLUP, LOW);
+Button btn3(BTN_3, INPUT_PULLUP, LOW);
+Button btn4(BTN_4, INPUT_PULLUP, LOW);
+
 // Таймеры
-uint32_t clockTimer, updateTimeTimer, alarmStartTime, vibroTimer, batteryControlTimer, playMusicDisplayOfTimer, snoozeStartTime;
-uint32_t btnTimer = 0;
+uint32_t clockTimer, updateTimeTimer, alarmStartTime, vibroTimer, batteryControlTimer, playMusicDisplayOfTimer, snoozeStartTime, justWokeTimer;
 uint32_t alarmDuration = 60000;   // Длительность сигнала будильника
 uint32_t snoozeDuration = 300000; // Перерыв для snooze
 
@@ -37,7 +43,9 @@ boolean vibroOn = true; // Переменная используется для 
 boolean isPlaying = false;
 boolean flashLightOn = false;
 boolean snoozeActive = false;
-boolean alarmTriggered;
+boolean alarmTriggered = false;
+boolean justWoke = false;
+boolean justWokeBlockMenu = false;
 
 // Переменные времени и настроек
 byte year, month, day, hrs, min, sec, alarmHrs, alarmMin, menuSelect;
@@ -57,6 +65,7 @@ byte chargeBattery[] = {_C, _H, _A, _r, _G, _E, _empty, _b, _A, _t, _t, _E, _r, 
 void initializeClock();
 void pinsConfig();
 void powerConfig();
+void buttonConfig();
 void testVibro();
 void enterSleepMode();
 void wakeUp();
@@ -67,7 +76,6 @@ void alarm();
 void snoozeButton();
 void alarmStopButton();
 void alarmStopTime();
-int readButton(int btnnum);
 void brightness();
 double voltageMeasure();
 void showVoltage(double voltage);
@@ -79,7 +87,6 @@ void stopAlarm();
 void startVibro();
 void stopVibro();
 void menu();
-void blockMenu();
 void alarmOnOff();
 void setAlarm();
 void setTime();
@@ -99,7 +106,7 @@ void setup()
   initializeClock();
   pinsConfig();
   powerConfig();
-  attachInterrupt(0, wakeUp, FALLING);  // Обработчик прерывания для включения от кнопки
+  buttonConfig();
   attachInterrupt(1, isAlarm, FALLING); // Обработчик прерывания для включения от сигнала DS3231
   testVibro();
   disp.runningString(welcomeBanner, sizeof(welcomeBanner), 250); // Приветсвтие при включении
@@ -107,15 +114,34 @@ void setup()
 
 void loop()
 {
+
+  if (justWoke)
+  {
+    justWokeTimer = millis();
+    justWoke = false;
+    justWokeBlockMenu = true;
+    detachInterrupt(0); // Отключаем прерывания, которые срабатывают при нажатии кнопки 1
+  }
+
+  if (justWokeBlockMenu && millis() - justWokeTimer > 500)
+  {
+    blockButton = false;
+  }
+
+  btn1.tick();
+  btn2.tick();
+  btn3.tick();
+  btn4.tick();
+
   // Данное условие обеспечивает включение звукового сигнала.
   if (alarmTriggered)
   {
-    startAlarm();
+    alarm();
     alarmTriggered = false;
   }
 
   // Если будильник сработал блокируем все функции кнопок.
-  // Ждём от нажатие кнопок для остановки будильника или для откладывания или остановки по времени.
+  // Ждём нажатие кнопок для остановки будильника или для откладывания или остановки по времени.
   if (alarmSignal)
   {
     blockButton = true;
@@ -164,26 +190,26 @@ void loop()
     batteryControlTimer = millis();
   }
 
-  // Вызов меню настроек времени и будильника
-  if (readButton(BTN_1) == 1 && !blockButton)
+  // Вызов меню настроек времени и будильника (короткое нажатие BTN_1)
+  if (btn1.click() && !blockButton)
   {
     menu();
   }
-  
-  // Вкл/выкл отображение часов(для энергосбережения) уход в сон при нажатии более трёх секунд
-  if (readButton(BTN_2) == 2 && !blockButton)
+
+  // Вкл/выкл отображение часов для энергосбережения), уход в сон (удержание BTN_2)
+  if (btn2.hold() && !blockButton)
   {
     clockOn = false;
   }
 
-  // Показать напряжение батареи
-  if (readButton(BTN_3) == 1 && !blockButton)
+  // Показать напряжение батареи (короткое нажатие BTN_3)
+  if (btn3.click() && !blockButton)
   {
     showVoltage(voltageMeasure());
   }
 
-  // Включение фонарика
-  if (readButton(BTN_4) == 1 && !blockButton)
+  // Включение фонарика (короткое нажатие BTN_4)
+  if (btn4.click() && !blockButton)
   {
     flashLight();
   }
@@ -213,7 +239,7 @@ void initializeClock()
     EEPROM.update(3, alarmVolumeDefault);
   }
   rtc.begin();
-  //rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); Раскоментировать строку для установки времени часов с компьютера
+  rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); // Раскоментировать строку для установки времени часов с компьютера
   rtc.clearAlarm(1);
   alarmHrs = EEPROM.read(0);
   alarmMin = EEPROM.read(1);
@@ -226,13 +252,10 @@ void initializeClock()
   updateDateTime();
 }
 
-// Конфигурация пинов
+// Конфигурация пинов.
 void pinsConfig()
 {
-  pinMode(BTN_1, INPUT);
-  pinMode(BTN_2, INPUT);
-  pinMode(BTN_3, INPUT);
-  pinMode(BTN_4, INPUT);
+  // Пины кнопок настраиваются автоматически в конструкторах EncButton
   pinMode(VIBRO, OUTPUT);
   pinMode(MUSIC_MOSFET, OUTPUT);
   pinMode(LED, OUTPUT);
@@ -240,11 +263,35 @@ void pinsConfig()
   pinMode(VOLTAGE, INPUT);
 }
 
+// Настройка энергосбережения
 void powerConfig()
 {
   power.autoCalibrate();                                    // автоматическая калибровка
   power.hardwareDisable(PWR_SPI | PWR_TIMER1 | PWR_TIMER2); // отключаем неиспользуемые модули МК
   power.setSleepMode(POWERDOWN_SLEEP);                      // устанавливаем режим сна в который будем уходить
+}
+
+// Настройка кнопок
+void buttonConfig()
+{
+
+  // Настраиваем кнопки (таймаут удержания 3 секунды для длинного нажатия)
+  btn1.setHoldTimeout(2000);
+  btn2.setHoldTimeout(2000);
+  btn3.setHoldTimeout(2000);
+  btn4.setHoldTimeout(2000);
+
+  // Устанавливаем короткий таймаут антидребезга для быстрого реагирования
+  btn1.setDebTimeout(30); // 30 мс вместо стандартных 50 мс
+  btn2.setDebTimeout(30);
+  btn3.setDebTimeout(30);
+  btn4.setDebTimeout(30);
+
+  // Устанавливаем короткий таймаут ожидания кликов (для быстрых повторных нажатий)
+  btn1.setClickTimeout(300); // 150 мс вместо стандартных 500 мс
+  btn2.setClickTimeout(300);
+  btn3.setClickTimeout(300);
+  btn4.setClickTimeout(300);
 }
 
 // Тест вибрации
@@ -259,12 +306,14 @@ void testVibro()
   digitalWrite(VIBRO, LOW);
 }
 
+// Вход в режим энергосбережения
 void enterSleepMode()
 {
   if (!clockOn && !alarmSignal && !isPlaying && !flashLightOn && !snoozeActive)
   {
     disp.clear();
     disp.point(false);
+    attachInterrupt(0, wakeUp, FALLING); // Включаем прерывания для включения от кнопки
     delay(1000);
     power.sleep(SLEEP_FOREVER);
   }
@@ -273,9 +322,11 @@ void enterSleepMode()
 void wakeUp()
 {
   clockOn = true;
+  justWoke = true;
+  blockButton = true;
 }
 
-// Получение времени из rtc DS3231
+// Получение даты и времени из rtc DS3231
 void updateDateTime()
 {
   DateTime now = rtc.now();
@@ -287,7 +338,7 @@ void updateDateTime()
   sec = now.second();
 }
 
-// Часы
+// Отображение времени на семисегметном индикаторе
 void clock(byte hrs, byte min)
 {
   if (clockOn)
@@ -306,7 +357,7 @@ void clock(byte hrs, byte min)
 void isAlarm()
 {
   snoozeCount = 0;
-  alarm();
+  alarmTriggered = true;
 }
 
 // Будильник
@@ -314,16 +365,17 @@ void alarm()
 {
   if (alarmOn && !alarmSignal)
   {
-    alarmTriggered = true;
     alarmSignal = true;
     clockOn = true;
     alarmStartTime = millis();
+    startAlarm();
   }
 }
 
+// Откладывание сигнала будильника при нажатии кнопок 3 или 4
 void snoozeButton()
 {
-  if (readButton(BTN_3) || readButton(BTN_4))
+  if (btn3.click() || btn4.click())
   {
     rtc.clearAlarm(1);
     alarmSignal = false;
@@ -346,10 +398,10 @@ void snoozeButton()
   }
 }
 
-// Остановка сигнала будильника с кнопок
+// Остановка сигнала будильника с кнопок 1 и 2
 void alarmStopButton()
 {
-  if (readButton(BTN_1) || readButton(BTN_2))
+  if (btn1.click() || btn2.click())
   {
     rtc.clearAlarm(1);
     alarmSignal = false;
@@ -387,55 +439,6 @@ void alarmStopTime()
   }
 }
 
-// Чтение кнопки с антидребезгом
-int readButton(int btnnum)
-{
-  static uint32_t btnTimer = 0;
-  static bool btnPressed = false;
-  static int lastBtnNum = -1;
-
-  int buttonState = digitalRead(btnnum);
-
-  // Если кнопка нажата (LOW из-за подтяжки к питанию)
-  if (buttonState == LOW)
-  {
-    if (!btnPressed)
-    {
-      // Первое обнаружение нажатия
-      btnPressed = true;
-      lastBtnNum = btnnum;
-      btnTimer = millis();
-    }
-    else
-    {
-      // Кнопка продолжает быть нажатой
-      if (lastBtnNum == btnnum && (millis() - btnTimer >= 3000))
-      {
-        // Долгое нажатие (больше 3 секунд)
-        btnPressed = false;
-        lastBtnNum = -1;
-        return 2;
-      }
-    }
-  }
-  else
-  {
-    // Кнопка отпущена
-    if (btnPressed && lastBtnNum == btnnum)
-    {
-      btnPressed = false;
-      // Проверяем время нажатия
-      if (millis() - btnTimer < 3000)
-      {
-        lastBtnNum = -1;
-        return 1; // Короткое нажатие
-      }
-    }
-  }
-
-  return 0; // Нет нажатия или нажатие еще обрабатывается
-}
-
 // Регулировка яркости свечения индикатора в зависимости от уровня освещения
 void brightness()
 {
@@ -467,7 +470,7 @@ double voltageMeasure()
   return voltageResult;
 }
 
-// Показ напряжения на индикаторе
+// Показ напряжения на семисегментном индикаторе
 void showVoltage(double voltage)
 {
   int intpart = trunc(voltage);
@@ -489,7 +492,7 @@ void batteryControl(double voltage)
     testVibro();
     disp.clear();
     disp.point(false);
-    disp.runningString(chargeBattery, sizeof(chargeBattery), 250 );
+    disp.runningString(chargeBattery, sizeof(chargeBattery), 250);
   }
   if (voltage > voltageDischargeTreshold && batteryDischarge)
   {
@@ -532,10 +535,10 @@ void startAlarm()
   delay(500);
   myMP3.volume(alarmVolume);
   delay(100);
-  myMP3.playFolder(2, random(1, 8));
+  myMP3.playFolder(1, random(1, 8));
 }
 
-// Остановка музыки
+// Остановка сигнала будильника
 void stopAlarm()
 {
   myMP3.stop();
@@ -567,8 +570,14 @@ void menu()
   menuSelect = 0;
   while (true)
   {
+    // Опрашиваем кнопки в цикле меню
+    btn1.tick();
+    btn2.tick();
+    btn3.tick();
+    btn4.tick();
+
     disp.point(false);
-    if (readButton(BTN_4))
+    if (btn4.click())
     {
       menuSelect = menuSelect + 1;
       if (menuSelect > 3)
@@ -579,12 +588,12 @@ void menu()
     if (menuSelect == 0)
     {
       disp.displayByte(_C, _L, _O, _empty);
-      if (readButton(BTN_2))
+      if (btn2.click())
       {
         setTime();
         break;
       }
-      if (readButton(BTN_1)) // Выход из меню
+      if (btn1.click()) // Выход из меню
       {
         disp.displayByte(_E, _S, _C, _empty);
         delay(1000);
@@ -594,11 +603,11 @@ void menu()
     if (menuSelect == 1)
     {
       disp.displayByte(_a, _L, _r, _empty);
-      if (readButton(BTN_2))
+      if (btn2.click())
       {
         alarmOnOff();
       }
-      if (readButton(BTN_1)) // Выход из меню
+      if (btn1.click()) // Выход из меню
       {
         disp.displayByte(_E, _S, _C, _empty);
         delay(1000);
@@ -608,11 +617,11 @@ void menu()
     if (menuSelect == 2)
     {
       disp.displayByte(_L, _o, _u, _d);
-      if (readButton(BTN_2))
+      if (btn2.click())
       {
         setVolume();
       }
-      if (readButton(BTN_1)) // Выход из меню
+      if (btn1.click()) // Выход из меню
       {
         disp.displayByte(_E, _S, _C, _empty);
         delay(1000);
@@ -622,11 +631,11 @@ void menu()
     if (menuSelect == 3)
     {
       disp.displayByte(_P, _L, _A, _Y);
-      if (readButton(BTN_2))
+      if (btn2.click())
       {
         playMusicMenu();
       }
-      if (readButton(BTN_1)) // Выход из меню
+      if (btn1.click()) // Выход из меню
       {
         disp.displayByte(_E, _S, _C, _empty);
         delay(1000);
@@ -640,14 +649,19 @@ void alarmOnOff()
 {
   while (true)
   {
-    if (readButton(BTN_4))
+    btn1.tick();
+    btn2.tick();
+    btn3.tick();
+    btn4.tick();
+
+    if (btn4.click())
     {
       menuSelectAlarm = !menuSelectAlarm;
     }
     if (menuSelectAlarm)
     {
       disp.displayByte(_empty, _empty, _O, _n);
-      if (readButton(BTN_2))
+      if (btn2.click())
       {
         EEPROM.update(2, 1);
         alarmOn = true;
@@ -658,7 +672,7 @@ void alarmOnOff()
     if (!menuSelectAlarm)
     {
       disp.displayByte(_empty, _O, _F, _F);
-      if (readButton(BTN_2))
+      if (btn2.click())
       {
         EEPROM.update(2, 0);
         alarmOn = false;
@@ -668,7 +682,7 @@ void alarmOnOff()
         break;
       }
     }
-    if (readButton(BTN_1)) // Выход из меню
+    if (btn1.click()) // Выход из меню
     {
       disp.displayByte(_E, _S, _C, _empty);
       delay(1000);
@@ -685,26 +699,28 @@ void setAlarm()
 
   while (true)
   {
+    btn1.tick();
+    btn2.tick();
+    btn3.tick();
+    btn4.tick();
+
     // Увеличение часов
-    if (readButton(BTN_3))
+    if (btn3.click())
     {
       alarmHrsTmp = (alarmHrsTmp + 1) % 24; // Увеличиваем часы
     }
     // Увеличение минут
-    if (readButton(BTN_4))
+    if (btn4.click())
     {
       alarmMinTmp = (alarmMinTmp + 1) % 60; // Увеличиваем минуты
     }
     // Подтверждение установки
-    if (readButton(BTN_2))
+    if (btn2.click())
     {
       EEPROM.update(0, alarmHrsTmp);
       EEPROM.update(1, alarmMinTmp);
       alarmHrs = alarmHrsTmp;
       alarmMin = alarmMinTmp;
-
-      // Устанавливаем будильник в DS3231
-      // Alarm1 будет срабатывать каждый день в указанное время
       DateTime now = rtc.now();
       DateTime alarmTime(now.year(), now.month(), now.day(), alarmHrsTmp, alarmMinTmp, 0);
       // Устанавливаем Alarm1 для срабатывания каждый день в указанное время
@@ -717,7 +733,7 @@ void setAlarm()
       delay(1000);
       break;
     }
-    if (readButton(BTN_1)) // Выход из меню
+    if (btn1.click()) // Выход из меню
     {
       disp.displayByte(_E, _S, _C, _empty);
       delay(1000);
@@ -726,7 +742,7 @@ void setAlarm()
 
     // Отображение текущего времени будильника
     disp.displayClock(alarmHrsTmp, alarmMinTmp);
-    delay(100); // Обновление дисплея
+    delay(50); // Уменьшено с 100 до 50 мс для более быстрого обновления
   }
 }
 
@@ -744,18 +760,23 @@ void setTime()
 
   while (true)
   {
+    btn1.tick();
+    btn2.tick();
+    btn3.tick();
+    btn4.tick();
+
     // Увеличение часов
-    if (readButton(BTN_3))
+    if (btn3.click())
     {
       clockHrsTmp = (clockHrsTmp + 1) % 24; // Увеличиваем часы
     }
     // Увеличение минут
-    if (readButton(BTN_4))
+    if (btn4.click())
     {
       clockMinTmp = (clockMinTmp + 1) % 60; // Увеличиваем минуты
     }
     // Подтверждение установки
-    if (readButton(BTN_2))
+    if (btn2.click())
     {
       // Создаем объект DateTime с новым временем и текущей датой
       DateTime newTime(clockYear, clockMonth, clockDate, clockHrsTmp, clockMinTmp, 0);
@@ -769,7 +790,7 @@ void setTime()
       delay(1000);
       break;
     }
-    if (readButton(BTN_1)) // Выход из меню
+    if (btn1.click()) // Выход из меню
     {
       disp.displayByte(_E, _S, _C, _empty);
       delay(1000);
@@ -777,7 +798,7 @@ void setTime()
     }
     // Отображение текущего времени
     disp.displayClock(clockHrsTmp, clockMinTmp);
-    delay(100); // Обновление дисплея
+    delay(50); // Уменьшено с 100 до 50 мс для более быстрого обновления
   }
 }
 
@@ -792,16 +813,22 @@ void setVolume()
   myMP3.volume(currentVolume);
   delay(50);
   myMP3.playFolder(1, 1);
+
   while (true)
   {
+    btn1.tick();
+    btn2.tick();
+    btn3.tick();
+    btn4.tick();
+
     // Увеличение громкости
-    if (readButton(BTN_4))
+    if (btn4.click())
     {
       disp.displayInt(currentVolume);
       if (currentVolume < 30)
       { // Максимальная громкость 30
         currentVolume++;
-        if (setVolTimer + millis() > 1000)
+        if (setVolTimer + millis() > 500) // Уменьшено с 1000 до 500 мс
         {
           myMP3.volume(currentVolume);
           delay(50);
@@ -812,12 +839,12 @@ void setVolume()
     }
 
     // Уменьшение громкости
-    if (readButton(BTN_3))
+    if (btn3.click())
     {
       if (currentVolume > 0)
       { // Минимальная громкость 0
         currentVolume--;
-        if (setVolTimer + millis() > 1000)
+        if (setVolTimer + millis() > 500) // Уменьшено с 1000 до 500 мс
         {
           myMP3.volume(currentVolume);
           delay(50);
@@ -828,29 +855,29 @@ void setVolume()
     }
 
     // Подтверждение выбора
-    if (readButton(BTN_2))
+    if (btn2.click())
     {
       alarmVolume = currentVolume;
       EEPROM.update(3, alarmVolume);
       myMP3.volume(alarmVolume);
-      disp.displayByte(_d, _O, _n, _E); // "donE"
-      delay(500);
+      disp.displayByte(_d, _O, _n, _E);
+      delay(1000);
       digitalWrite(MUSIC_MOSFET, LOW);
       break;
     }
 
     // Выход без сохранения
-    if (readButton(BTN_1))
+    if (btn1.click())
     {
-      disp.displayByte(_E, _S, _C, _empty); // "ESC "
-      delay(500);
+      disp.displayByte(_E, _S, _C, _empty);
+      delay(1000);
       digitalWrite(MUSIC_MOSFET, LOW);
       break;
     }
 
     // Отображение текущего уровня громкости
     disp.displayInt(currentVolume);
-    delay(100);
+    delay(50); // Уменьшено с 100 до 50 мс
   }
 }
 
@@ -862,8 +889,13 @@ void playMusicMenu()
   // Основной цикл меню
   while (true)
   {
+    btn1.tick();
+    btn2.tick();
+    btn3.tick();
+    btn4.tick();
+
     disp.point(false);
-    if (readButton(BTN_4))
+    if (btn4.click())
     {
       menuSelect = menuSelect + 1;
       if (menuSelect > 3)
@@ -876,11 +908,11 @@ void playMusicMenu()
       if (!isPlaying)
       {
         disp.displayByte(_S, _t, _r, _t);
-        if (readButton(BTN_2))
+        if (btn2.click())
         {
           playMusic();
         }
-        if (readButton(BTN_1)) // Выход из меню
+        if (btn1.click()) // Выход из меню
         {
           disp.displayByte(_E, _S, _C, _empty);
           delay(1000);
@@ -890,11 +922,11 @@ void playMusicMenu()
       else
       {
         disp.displayByte(_S, _t, _o, _P);
-        if (readButton(BTN_2))
+        if (btn2.click())
         {
           stopMusic();
         }
-        if (readButton(BTN_1)) // Выход из меню
+        if (btn1.click()) // Выход из меню
         {
           disp.displayByte(_E, _S, _C, _empty);
           delay(1000);
@@ -905,11 +937,11 @@ void playMusicMenu()
     if (menuSelect == 1)
     {
       disp.displayByte(_S, _L, _E, _d);
-      if (readButton(BTN_2))
+      if (btn2.click())
       {
         nextTrack();
       }
-      if (readButton(BTN_1)) // Выход из меню
+      if (btn1.click()) // Выход из меню
       {
         disp.displayByte(_E, _S, _C, _empty);
         delay(1000);
@@ -919,11 +951,11 @@ void playMusicMenu()
     if (menuSelect == 2)
     {
       disp.displayByte(_P, _r, _E, _d);
-      if (readButton(BTN_2))
+      if (btn2.click())
       {
         previousTrack();
       }
-      if (readButton(BTN_1)) // Выход из меню
+      if (btn1.click()) // Выход из меню
       {
         disp.displayByte(_E, _S, _C, _empty);
         delay(1000);
@@ -933,11 +965,11 @@ void playMusicMenu()
     if (menuSelect == 3)
     {
       disp.displayByte(_L, _o, _u, _d);
-      if (readButton(BTN_2))
+      if (btn2.click())
       {
         setVolumeMusic();
       }
-      if (readButton(BTN_1)) // Выход из меню
+      if (btn1.click()) // Выход из меню
       {
         disp.displayByte(_E, _S, _C, _empty);
         delay(1000);
@@ -949,7 +981,12 @@ void playMusicMenu()
       while (true)
       {
         disp.clear();
-        if (readButton(BTN_1) || readButton(BTN_2) || readButton(BTN_3) || readButton(BTN_4))
+        btn1.tick();
+        btn2.tick();
+        btn3.tick();
+        btn4.tick();
+
+        if (btn1.click() || btn2.click() || btn3.click() || btn4.click())
         {
           playMusicDisplayOfTimer = millis();
           break;
@@ -966,7 +1003,7 @@ void playMusic()
   delay(500);
   myMP3.volume(20);
   delay(50);
-  myMP3.playFolder(1,1);
+  myMP3.playFolder(1, 1);
   delay(50);
   myMP3.startRepeatPlay();
   isPlaying = true;
@@ -1005,8 +1042,13 @@ void setVolumeMusic()
 
   while (true)
   {
+    btn1.tick();
+    btn2.tick();
+    btn3.tick();
+    btn4.tick();
+
     // Увеличение громкости
-    if (readButton(BTN_4))
+    if (btn4.click())
     {
       if (currentVolume < 30)
       { // Максимальная громкость 30
@@ -1016,7 +1058,7 @@ void setVolumeMusic()
     }
 
     // Уменьшение громкости
-    if (readButton(BTN_3))
+    if (btn3.click())
     {
       if (currentVolume > 0)
       { // Минимальная громкость 0
@@ -1026,7 +1068,7 @@ void setVolumeMusic()
     }
 
     // Подтверждение выбора
-    if (readButton(BTN_2))
+    if (btn2.click())
     {
       disp.displayByte(_d, _O, _n, _E);
       delay(1000);
@@ -1034,7 +1076,7 @@ void setVolumeMusic()
     }
 
     // Выход без сохранения
-    if (readButton(BTN_1))
+    if (btn1.click())
     {
       disp.displayByte(_E, _S, _C, _empty);
       delay(1000);
@@ -1043,10 +1085,11 @@ void setVolumeMusic()
 
     // Отображение текущего уровня громкости
     disp.displayInt(currentVolume);
-    delay(100);
+    delay(50); // Уменьшено с 100 до 50 мс
   }
 }
-// Включение фонарика по нажатию кнопки 2
+
+// Включение фонарика по нажатию BTN_4
 void flashLight()
 {
   if (!flashLightOn)
