@@ -696,24 +696,59 @@ void setAlarm()
 {
   byte alarmHrsTmp = alarmHrs;
   byte alarmMinTmp = alarmMin;
+  uint32_t lastHourChangeTime = 0;
+  uint32_t lastMinuteChangeTime = 0;
+  const uint16_t INITIAL_DELAY = 500;   // Начальная задержка перед первым изменением
+  const uint16_t CHANGE_INTERVAL = 500; // Интервал между изменениями
 
   while (true)
   {
+    uint32_t currentTime = millis();
     btn1.tick();
     btn2.tick();
     btn3.tick();
     btn4.tick();
 
-    // Увеличение часов
+    // Увеличение часов при клике кнопки 3 (однократное нажатие)
     if (btn3.click())
     {
-      alarmHrsTmp = (alarmHrsTmp + 1) % 24; // Увеличиваем часы
+      alarmHrsTmp = (alarmHrsTmp + 1) % 24;
     }
-    // Увеличение минут
+
+    // Увеличение часов при удержании кнопки 3
+    if (btn3.pressing())
+    { // кнопка нажата в данный момент
+      uint16_t pressDuration = btn3.pressFor();
+      if (pressDuration >= INITIAL_DELAY)
+      {
+        if (lastHourChangeTime == 0 || (currentTime - lastHourChangeTime >= CHANGE_INTERVAL))
+        {
+          alarmHrsTmp = (alarmHrsTmp + 1) % 24;
+          lastHourChangeTime = currentTime;
+        }
+      }
+    }
+
+    // Увеличение минут при клике кнопки 4 (однократное нажатие)
     if (btn4.click())
     {
-      alarmMinTmp = (alarmMinTmp + 1) % 60; // Увеличиваем минуты
+      alarmMinTmp = (alarmMinTmp + 1) % 60;
     }
+
+    // Увеличение минут при удержании кнопки 4
+    if (btn4.pressing())
+    { // кнопка нажата в данный момент
+      uint16_t pressDuration = btn4.pressFor();
+      if (pressDuration >= INITIAL_DELAY)
+      {
+        if (lastMinuteChangeTime == 0 || (currentTime - lastMinuteChangeTime >= CHANGE_INTERVAL))
+        {
+          alarmMinTmp = (alarmMinTmp + 1) % 60;
+          lastMinuteChangeTime = currentTime;
+        }
+      }
+    }
+
     // Подтверждение установки
     if (btn2.click())
     {
@@ -739,12 +774,12 @@ void setAlarm()
       delay(1000);
       break;
     }
-
     // Отображение текущего времени будильника
     disp.displayClock(alarmHrsTmp, alarmMinTmp);
     delay(50); // Уменьшено с 100 до 50 мс для более быстрого обновления
   }
 }
+
 
 // Установка времени часов rtc DS3231
 void setTime()
@@ -752,39 +787,71 @@ void setTime()
   DateTime now = rtc.now();
   byte clockMinTmp = now.minute();
   byte clockHrsTmp = now.hour();
-
   // Используем текущую дату из RTC
   byte clockDate = now.day();
   byte clockMonth = now.month();
   int clockYear = now.year();
+  uint32_t lastHourChangeTime = 0;
+  uint32_t lastMinuteChangeTime = 0;
+  const uint16_t INITIAL_DELAY = 500;   // Начальная задержка перед первым изменением
+  const uint16_t CHANGE_INTERVAL = 500; // Интервал между изменениями
 
   while (true)
   {
+    uint32_t currentTime = millis();
     btn1.tick();
     btn2.tick();
     btn3.tick();
     btn4.tick();
 
-    // Увеличение часов
+    // Увеличение часов при клике кнопки 3 (однократное нажатие)
     if (btn3.click())
     {
       clockHrsTmp = (clockHrsTmp + 1) % 24; // Увеличиваем часы
     }
-    // Увеличение минут
+
+    // Увеличение часов при удержании кнопки 3
+    if (btn3.pressing())
+    { // кнопка нажата в данный момент
+      uint16_t pressDuration = btn3.pressFor();
+      if (pressDuration >= INITIAL_DELAY)
+      {
+        if (lastHourChangeTime == 0 || (currentTime - lastHourChangeTime >= CHANGE_INTERVAL))
+        {
+          clockHrsTmp = (clockHrsTmp + 1) % 24;
+          lastHourChangeTime = currentTime;
+        }
+      }
+    }
+
+    // Увеличение минут при клике кнопки 4 (однократное нажатие)
     if (btn4.click())
     {
       clockMinTmp = (clockMinTmp + 1) % 60; // Увеличиваем минуты
     }
+
+    // Увеличение минут при удержании кнопки 4
+    if (btn4.pressing())
+    { // кнопка нажата в данный момент
+      uint16_t pressDuration = btn4.pressFor();
+      if (pressDuration >= INITIAL_DELAY)
+      {
+        if (lastMinuteChangeTime == 0 || (currentTime - lastMinuteChangeTime >= CHANGE_INTERVAL))
+        {
+          clockMinTmp = (clockMinTmp + 1) % 60;
+          lastMinuteChangeTime = currentTime;
+        }
+      }
+    }
+
     // Подтверждение установки
     if (btn2.click())
     {
       // Создаем объект DateTime с новым временем и текущей датой
       DateTime newTime(clockYear, clockMonth, clockDate, clockHrsTmp, clockMinTmp, 0);
       rtc.adjust(newTime); // Устанавливаем новое время
-
       // Обновляем глобальные переменные времени
       updateDateTime();
-
       disp.point(false);
       disp.displayByte(_d, _O, _n, _E);
       delay(1000);
