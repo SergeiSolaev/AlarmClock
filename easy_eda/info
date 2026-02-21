@@ -4,7 +4,7 @@
   "name": "Alarm_clock",
   "content": "",
   "created_at": "2025-04-28 19:44:08",
-  "updated_at": "2025-07-07 22:09:53",
+  "updated_at": "2026-02-21 07:01:16",
   "stick": "",
   "documents": [
     {
@@ -216,9 +216,9 @@
           }
         ],
         [
-          "LED-0603_G",
+          "LED-0805_G",
           1,
-          "LED0603_GREEN",
+          "LED0805_GREEN",
           "LED1",
           {
             "Manufacturer Part": "19-217/GHC-YR1S2/3T",
@@ -456,11 +456,11 @@
           }
         ]
       ],
-      "updateTime": 1749878499,
+      "updateTime": 1771642876,
       "createTime": 1745855049,
       "histories": [],
       "created_at": "2025-04-28 19:44:09",
-      "updated_at": "2025-06-14 09:21:39"
+      "updated_at": "2026-02-21 07:01:16"
     },
     {
       "uuid": "22264a8ed63018d82ebb70427afc6120",
@@ -472,6 +472,7 @@
       "master": "",
       "thumb": "/images/thumb-default.png",
       "components": {
+        "df7b9c1c92a741e3a4e90f224547567e": 1,
         "398691f1f785460098bbe5ee6590333c": 28,
         "36b1306a115341f4b4d9407fb34974e0": 7,
         "2ee8eb13a0124a108e622ce40c0c25a8": 6,
@@ -483,7 +484,6 @@
         "25a043cd6bfe4528a121551d6550b565": 1,
         "9c6dab9dc91e4b929269cb3454d6d713": 1,
         "f8151fdc728a41ebbc304e11d39e5437": 8,
-        "7b706fa666744f94a830dffb572df5db": 1,
         "2368f58a489543798b8387353af2ca86": 1,
         "deefac3aba37491e8989b2c1b533262b": 1,
         "c3a3a479239346a8bb3da07840bfe89e": 1,
@@ -491,9 +491,9 @@
         "d5ffd9430bcb4de5bc30146f302b28e0": 1,
         "7568fee05bc44581b2c32625ae15b3f8": 1,
         "b7243d11a5f04fb7894887aaa3569585": 1,
+        "9ab4ba27487f4e968ec8c676394520e2": 1,
         "5b1f929b487f4a238408feff88c95f19": 1,
-        "b48b9c9358624d9abfe7458b9b7ac67e": 4,
-        "9ab4ba27487f4e968ec8c676394520e2": 1
+        "b48b9c9358624d9abfe7458b9b7ac67e": 4
       },
       "BOM": [
         [
@@ -540,16 +540,16 @@
           }
         ]
       ],
-      "updateTime": 1751911793,
+      "updateTime": 1771642682,
       "createTime": 1745856653,
       "histories": [],
       "created_at": "2025-04-28 20:10:53",
-      "updated_at": "2025-07-07 22:09:53"
+      "updated_at": "2026-02-21 06:58:02"
     }
   ],
   "sort": [],
   "title": "Alarm_clock",
   "foldername": "Alarm_clock",
   "schfilename": "Alarm_clock.json",
-  "schfilemtime": 1749878499188
+  "schfilemtime": 1771642876529
 }
