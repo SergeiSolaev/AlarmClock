@@ -31,7 +31,7 @@ Button btn3(BTN_3, INPUT_PULLUP, LOW);
 Button btn4(BTN_4, INPUT_PULLUP, LOW);
 
 // Таймеры
-uint32_t clockTimer, updateTimeTimer, alarmStartTime, vibroTimer, batteryControlTimer, playMusicDisplayOfTimer, snoozeStartTime, justWokeTimer;
+uint32_t clockTimer, updateTimeTimer, alarmStartTime, vibroTimer, batteryControlTimer, playMusicDisplayOfTimer, snoozeStartTime, justWokeTimer, unblockMenuTimer;
 uint32_t alarmDuration = 60000;   // Длительность сигнала будильника
 uint32_t snoozeDuration = 300000; // Перерыв для snooze
 
@@ -124,6 +124,14 @@ void loop()
   }
 
   if (justWokeBlockMenu && millis() - justWokeTimer > 500)
+  {
+    blockButton = false;
+  }
+
+  // Задержка на некоторое время, что-бы после нажатия кнопок отключения будильника 
+  // не происходил мгновенный вход в меню или активация других функций
+  // привязанных к той или иной кнопке
+  if (millis() - unblockMenuTimer > 250)
   {
     blockButton = false;
   }
@@ -403,11 +411,11 @@ void alarmStopButton()
 {
   if (btn1.click() || btn2.click())
   {
+    unblockMenuTimer = millis();
     rtc.clearAlarm(1);
     alarmSignal = false;
     stopVibro();
     stopAlarm();
-    blockButton = false;
     alarmStartTime = 0; // Сбрасываем таймер при остановке будильника
     snoozeActive = false;
   }
