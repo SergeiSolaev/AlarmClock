@@ -1,7 +1,7 @@
 <h1 align="center">Часы-будильник</h1>
-<div style="text-align: center;">
-  <img src="logo.png" width="50%" style="display: block; margin: 0 auto;">
-  <img src="https://img.shields.io/badge/version-v1.0-green" style="display: block; margin: 0 auto;">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+  <img src="logo.png" width="50%">
+  <img src="https://img.shields.io/badge/version-v1.0-green">
 </div>
 
 
