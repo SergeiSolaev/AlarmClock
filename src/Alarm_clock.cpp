@@ -384,7 +384,7 @@ void snoozeButton()
     alarmSignal = false;
     stopVibro();
     stopAlarm();
-    blockButton = false;
+    unblockMenuTimer = millis();
     alarmStartTime = 0; // Сбрасываем таймер при остановке будильника
     if (snoozeCount < 3)
     {
