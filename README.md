@@ -1,9 +1,9 @@
-<div style="text-align: center;">
-  <img src="logo.png" width="50%" style="display: block; margin: 0 auto;">
-</div>
-<div style="text-align: center;">
-  <img src="https://img.shields.io/badge/version-v1.0-green" style="display: block; margin: 0 auto;">
-</div>
+<p align="center">
+  <img src="logo.png" width="50%">
+</p>
+<p align="center">
+  <img src="https://img.shields.io/badge/version-v1.0-green" alt="Version">
+</p>
 
 ## Описание проекта
 
