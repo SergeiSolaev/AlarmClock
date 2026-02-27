@@ -1,10 +1,10 @@
 <h1 align="center">Часы-будильник</h1>
 <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
   <img src="logo.png" width="50%">
+</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
   <img src="https://img.shields.io/badge/version-v1.0-green">
 </div>
-
-
 
 ## Описание проекта
 
