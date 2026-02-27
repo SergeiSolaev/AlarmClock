@@ -31,7 +31,7 @@ Button btn3(BTN_3, INPUT_PULLUP, LOW);
 Button btn4(BTN_4, INPUT_PULLUP, LOW);
 
 // Таймеры
-uint32_t clockTimer, updateTimeTimer, alarmStartTime, vibroTimer, batteryControlTimer, playMusicDisplayOfTimer, snoozeStartTime, justWokeTimer, unblockMenuTimer;
+uint32_t clockTimer, updateTimeTimer, alarmStartTime, vibroTimer, batteryControlTimer, playMusicDisplayOfTimer, snoozeStartTime, unblockMenuTimer;
 uint32_t alarmDuration = 60000;   // Длительность сигнала будильника
 uint32_t snoozeDuration = 300000; // Перерыв для snooze
 
@@ -117,20 +117,15 @@ void loop()
 
   if (justWoke)
   {
-    justWokeTimer = millis();
+    unblockMenuTimer = millis();
     justWoke = false;
-    justWokeBlockMenu = true;
     detachInterrupt(0); // Отключаем прерывания, которые срабатывают при нажатии кнопки 1
   }
 
-  if (justWokeBlockMenu && millis() - justWokeTimer > 500)
-  {
-    blockButton = false;
-  }
-
-  // Задержка на некоторое время, что-бы после нажатия кнопок отключения будильника 
+  // Задержка на некоторое время, что-бы после нажатия кнопок отключения будильника
   // не происходил мгновенный вход в меню или активация других функций
   // привязанных к той или иной кнопке
+  // Так-же раотает при нажатие кнопки для выхода из спящего режима.
   if (millis() - unblockMenuTimer > 250)
   {
     blockButton = false;
@@ -321,6 +316,7 @@ void enterSleepMode()
   {
     disp.clear();
     disp.point(false);
+    blockButton = true;
     attachInterrupt(0, wakeUp, FALLING); // Включаем прерывания для включения от кнопки
     delay(1000);
     power.sleep(SLEEP_FOREVER);
@@ -331,7 +327,6 @@ void wakeUp()
 {
   clockOn = true;
   justWoke = true;
-  blockButton = true;
 }
 
 // Получение даты и времени из rtc DS3231
@@ -787,7 +782,6 @@ void setAlarm()
     delay(50); // Уменьшено с 100 до 50 мс для более быстрого обновления
   }
 }
-
 
 // Установка времени часов rtc DS3231
 void setTime()
