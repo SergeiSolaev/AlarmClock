@@ -1,3 +1,4 @@
+<h1 align="center"> Часы-будильник</h1>
 <p align="center">
   <img src="logo.png" width="50%">
 </p>
