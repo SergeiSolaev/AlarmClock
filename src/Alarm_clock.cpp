@@ -8,7 +8,7 @@
 #include "EncButton.h"
 
 // Версия прошивки
-#define FW_VERSION "1.2.1"
+#define FW_VERSION "1.2.2"
 // Преобразование символа цифры в код сегмента для передачи символа в функцию вывода на дисплей
 // для показа версии
 #define SEG(x)                       \
@@ -498,7 +498,10 @@ void timer()
   uint32_t timerCurrentRemain = timerStartValue;                                // оставшееся время
   uint32_t timerPrevUpdate = millis();                                          // время последнего обновления
   uint32_t displayToggleTimer = millis();                                       // таймер для мигания дисплеем
-  timerDisplayState = true;                                                     // текущее состояние видимости дисплея (true = вкл)
+  uint32_t secondsDotsBlinkTimer = millis();                                    // таймер для мигания точками
+  uint32_t updateBrightnessTimer = millis();                                    // таймер для обновления яркости
+  timerDisplayState = true;                                                     
+  secondsDots = true;
                                                                                 
 
   // Основной цикл работы таймера
@@ -571,7 +574,15 @@ void timer()
         byte mins = timerCurrentRemain / 60000;
         byte secs = (timerCurrentRemain % 60000) / 1000;
         disp.displayClock(mins, secs);
-        // Мигаем двоеточием каждую секунду
+      }
+    }
+
+    // Мигаем двоеточием
+    if (currentTime - secondsDotsBlinkTimer >= 500)
+    {
+      if (timerDisplayState && !timerFinished)
+      {
+        secondsDotsBlinkTimer = currentTime;
         secondsDots = !secondsDots;
         disp.point(secondsDots);
       }
@@ -599,9 +610,10 @@ void timer()
       }
     }
 
-    // Управление яркостью (только если дисплей включен)
-    if (clockOn)
+    // Обновление яркости
+    if (currentTime - updateBrightnessTimer >= 500 && clockOn)
     {
+      updateBrightnessTimer = millis();
       brightness();
     }
 
@@ -623,9 +635,6 @@ void timer()
         break; // выходим из основного цикла таймера
       }
     }
-
-    // Маленькая задержка, чтобы не нагружать процессор
-    delay(50);
   }
 }
 
