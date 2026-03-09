@@ -3,7 +3,7 @@
   <img src="logo.png" width="50%">
 </p>
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.3.2-green" alt="Version">
+  <img src="https://img.shields.io/badge/version-v1.4.2-green" alt="Version">
 </p>
 
 ## Описание проекта

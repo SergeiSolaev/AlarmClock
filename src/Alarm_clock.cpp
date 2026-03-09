@@ -8,7 +8,7 @@
 #include "EncButton.h"
 
 // Версия прошивки
-#define FW_VERSION "1.3.2"
+#define FW_VERSION "1.4.2"
 // Преобразование символа цифры в код сегмента для передачи символа в функцию вывода на дисплей
 // для показа версии
 #define SEG(x)                       \
@@ -854,7 +854,7 @@ void menu()
     if (btn4.click())
     {
       menuSelect = menuSelect + 1;
-      if (menuSelect > 4)
+      if (menuSelect > 5)
       {
         menuSelect = 0;
       }
@@ -930,6 +930,16 @@ void menu()
       {
         playMusicMenu();
       }
+      if (btn1.click()) // Выход из меню
+      {
+        disp.displayByte(_E, _S, _C, _empty);
+        delay(1000);
+        break;
+      }
+    }
+    if (menuSelect == 5)
+    {
+      disp.displayByte(fw_version);
       if (btn1.click()) // Выход из меню
       {
         disp.displayByte(_E, _S, _C, _empty);
