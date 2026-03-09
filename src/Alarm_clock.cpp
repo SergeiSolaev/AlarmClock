@@ -66,6 +66,7 @@ bool justWokeBlockMenu = false;
 bool timerOn = false;
 bool displayFlashing = false; // Флаг, что таймер окончен и дисплей мигает
 bool timerFinished = false;   // Флаг окончания таймера
+bool timerDisplayState = true;// Текущее состояние видимости дисплея таймера
 
 // Переменные времени и настроек
 uint8_t year, month, day, hrs, min, sec, alarmHrs, alarmMin, menuSelect;
@@ -497,7 +498,7 @@ void timer()
   uint32_t timerCurrentRemain = timerStartValue;                                // оставшееся время
   uint32_t timerPrevUpdate = millis();                                          // время последнего обновления
   uint32_t displayToggleTimer = millis();                                       // таймер для мигания дисплеем
-  bool timerDisplayState = true;                                                // текущее состояние видимости дисплея (true = вкл)
+  timerDisplayState = true;                                                     // текущее состояние видимости дисплея (true = вкл)
                                                                                 
 
   // Основной цикл работы таймера
