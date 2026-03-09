@@ -8,7 +8,7 @@
 #include "EncButton.h"
 
 // Версия прошивки
-#define FW_VERSION "1.2.2"
+#define FW_VERSION "1.3.2"
 // Преобразование символа цифры в код сегмента для передачи символа в функцию вывода на дисплей
 // для показа версии
 #define SEG(x)                       \
@@ -69,7 +69,8 @@ bool timerFinished = false;   // Флаг окончания таймера
 bool timerDisplayState = true;// Текущее состояние видимости дисплея таймера
 
 // Переменные времени и настроек
-uint8_t year, month, day, hrs, min, sec, alarmHrs, alarmMin, menuSelect;
+uint16_t year;
+uint8_t month, day, hrs, min, sec, alarmHrs, alarmMin, menuSelect;
 uint8_t alarmVolume;
 uint8_t alarmOnDefault = false;
 uint8_t alarmHrsDefault = 12; // Значения будильника, которые записываются в EEPROM при первом включении
@@ -226,6 +227,13 @@ void loop()
     menu();
   }
 
+  
+  if (btn2.click() && !blockButton)
+  {
+    showTemperature();
+    showDate();
+  }
+  
   // Вкл/выкл отображение часов для энергосбережения), уход в сон (удержание BTN_2)
   if (btn2.hold() && !blockButton)
   {
