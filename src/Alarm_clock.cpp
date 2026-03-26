@@ -7,7 +7,7 @@
 #include "GyverPower.h"
 #include "EncButton.h"
 
-#define FW_VERSION "1.4.4"
+#define FW_VERSION "1.4.5"
 
 // ===== HARDWARE =====
 
@@ -134,7 +134,7 @@ bool buttonsBlocked = false;
 bool justWoke = false;
 bool justWokeBlockMenu = false;
 
-uint8_t mainMenuItem;
+int8_t mainMenuItem;
 
 
 // ===== Прототипы функций =====
@@ -903,6 +903,14 @@ void menu()
     updateButtons();
 
     disp.point(false);
+    if (btn3.click())
+    {
+      mainMenuItem = mainMenuItem - 1;
+      if (mainMenuItem < 0)
+      {
+        mainMenuItem = 5;
+      }
+    }
     if (btn4.click())
     {
       mainMenuItem = mainMenuItem + 1;
@@ -1007,7 +1015,10 @@ void alarmOnOff()
   while (true)
   {
     updateButtons();
-
+    if (btn3.click())
+    {
+      alarmMenuState = !alarmMenuState;
+    }
     if (btn4.click())
     {
       alarmMenuState = !alarmMenuState;
@@ -1305,6 +1316,14 @@ void playMusicMenu()
     updateButtons();
 
     disp.point(false);
+    if (btn3.click())
+    {
+      mainMenuItem = mainMenuItem -1;
+      if (mainMenuItem < 0)
+      {
+        mainMenuItem = 3;
+      }
+    }
     if (btn4.click())
     {
       mainMenuItem = mainMenuItem + 1;
