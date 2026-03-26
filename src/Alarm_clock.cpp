@@ -7,7 +7,7 @@
 #include "GyverPower.h"
 #include "EncButton.h"
 
-#define FW_VERSION "1.4.3"
+#define FW_VERSION "1.4.4"
 
 // ===== HARDWARE =====
 
@@ -706,6 +706,9 @@ void snoozeButton()
     stopAlarm();
     unblockMenuTimer = millis();
     alarmStartTime = 0; // Сбрасываем таймер при остановке будильника
+    disp.point(false);
+    disp.displayByte(_S, _n, _o, _o);
+    delay(1000);
     if (snoozeCount < 3)
     {
       snoozeActive = true;
@@ -733,6 +736,9 @@ void alarmStopButton()
     stopAlarm();
     alarmStartTime = 0; // Сбрасываем таймер при остановке будильника
     snoozeActive = false;
+    disp.point(false);
+    disp.displayByte(_S, _t, _o, _P);
+    delay(1000);
   }
 }
 
