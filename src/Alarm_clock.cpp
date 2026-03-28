@@ -24,7 +24,7 @@
 #define LIGHT_SENSOR A0
 #define VOLTAGE A1
 
-// Создаем объекты устройств 
+// Создаем объекты устройств
 DFPlayerMini_Fast myMP3;
 RTC_DS3231 rtc; // RTC DS3231 подключается к SDA – A4, SCL – A5
 GyverTM1637 disp(CLK, DIO);
@@ -34,7 +34,6 @@ Button btn1(BTN_1, INPUT_PULLUP, LOW);
 Button btn2(BTN_2, INPUT_PULLUP, LOW);
 Button btn3(BTN_3, INPUT_PULLUP, LOW);
 Button btn4(BTN_4, INPUT_PULLUP, LOW);
-
 
 // ===== SYSTEM TIMERS =====
 
@@ -138,7 +137,6 @@ bool mainMenuActive = false;
 
 int8_t mainMenuItem = 0;
 
-
 // ===== Прототипы функций =====
 void initializeClock();
 void pinsConfig();
@@ -187,7 +185,7 @@ void setup()
   buttonConfig();
   attachInterrupt(1, onAlarmInterrupt, FALLING); // Подключаем прерывания для включения от сигнала DS3231
   testVibro();
-  disp.displayByte(fw_version); 
+  disp.displayByte(fw_version);
   delay(1500);
 }
 
@@ -249,7 +247,6 @@ void loop()
   {
     menu();
   }
-  
 
   // Обновление времени из rtc модуля DS3231
   // Периодичность раз в секунду
@@ -268,9 +265,9 @@ void loop()
       displayClock(hrs, min);
     }
   }
-  
+
   // Регулировка яркости
-    if (millis() - brightnessControlTimer > 500)
+  if (millis() - brightnessControlTimer > 500)
   {
     brightnessControl();
   }
@@ -288,14 +285,14 @@ void loop()
     menuActive = true;
   }
 
-  // Показ температуры (встроенный в DS3231 датчик) 
+  // Показ температуры (встроенный в DS3231 датчик)
   // Показ даты
   if (btn2.click() && !buttonsBlocked && !menuActive)
   {
     showTemperature();
     showDate();
   }
-  
+
   // Выключение отображения часов и уход в сон (удержание BTN_2)
   if (btn2.hold() && !buttonsBlocked && !menuActive)
   {
@@ -350,8 +347,8 @@ void initializeClock()
   disp.clear();
   disp.brightness(7); // Яркость, 0 - 7 (минимум - максимум)
   updateDateTime();
-  randomSeed(analogRead(A3)); // Считать значения (наводки) на неподключеном входе А3 
-                              // для формирования рандомной последовательности чисел 
+  randomSeed(analogRead(A3)); // Считать значения (наводки) на неподключеном входе А3
+                              // для формирования рандомной последовательности чисел
 }
 
 // Конфигурация пинов.
@@ -577,10 +574,10 @@ void runCountDownTimer()
   uint32_t timerCurrentRemain = timerStartValue;                                // оставшееся время
   uint32_t timerPrevUpdate = millis();                                          // время последнего обновления
   uint32_t displayToggleTimer = millis();                                       // таймер для мигания дисплеем
-  displayClockTimer = millis();                                             
-  timerDisplayState = true;                                                     
+  displayClockTimer = millis();
+  timerDisplayState = true;
   secondsDots = true;
-                                                                                
+
   // Основной цикл работы таймера
   while (true)
   {
@@ -591,18 +588,18 @@ void runCountDownTimer()
     // Обработка кнопки 1: Выход из таймера (до окончания)
     if (btn1.click() && !timerFinished)
     {
-      timerOn = false; 
+      timerOn = false;
       disp.point(false);
-      disp.displayByte(_E, _S, _C, _empty); 
+      disp.displayByte(_E, _S, _C, _empty);
       delay(1000);
-      return; 
+      return;
     }
 
     // Обработка длинного нажатия кнопки 2: Вкл/Выкл дисплея
     if (btn2.hold())
-    { // Используем hold() для длинного нажатия (настроен на 2 сек)
-      if (!timerFinished)   // Если таймер еще не закончился
-      {                     
+    {                     // Используем hold() для длинного нажатия (настроен на 2 сек)
+      if (!timerFinished) // Если таймер еще не закончился
+      {
         timerDisplayState = !timerDisplayState; // переключаем состояние отображения часов
         if (timerDisplayState)
         {
@@ -659,17 +656,17 @@ void runCountDownTimer()
     if (displayBlinking)
     {
       if (currentTime - displayToggleTimer >= 1000) // каждую секунду
-      {                               
+      {
         timerDisplayState = !timerDisplayState; // переключаем состояние
         if (timerDisplayState)
-        { 
+        {
           byte mins = timerCurrentRemain / 60000;
           byte secs = (timerCurrentRemain % 60000) / 1000;
           disp.displayClock(mins, secs);
-          disp.point(true); 
+          disp.point(true);
         }
         else
-        { 
+        {
           disp.clear();
           disp.point(false);
         }
@@ -906,82 +903,82 @@ void stopVibro()
 // Меню
 void menu()
 {
-    disp.point(false);
-    if (btn3.click())
+  disp.point(false);
+  if (btn3.click())
+  {
+    mainMenuItem = mainMenuItem - 1;
+    if (mainMenuItem < 0)
     {
-      mainMenuItem = mainMenuItem - 1;
-      if (mainMenuItem < 0)
+      mainMenuItem = 5;
+    }
+  }
+  if (btn4.click())
+  {
+    mainMenuItem = mainMenuItem + 1;
+    if (mainMenuItem > 5)
+    {
+      mainMenuItem = 0;
+    }
+  }
+  if (mainMenuItem == 0)
+  {
+    disp.displayByte(_C, _L, _O, _empty);
+    if (btn2.click())
+    {
+      setTime();
+    }
+  }
+  if (mainMenuItem == 1)
+  {
+    disp.displayByte(_a, _L, _r, _empty);
+    if (btn2.click())
+    {
+      alarmOnOff();
+    }
+  }
+  if (mainMenuItem == 2)
+  {
+    disp.displayByte(_C, _h, _r, _o);
+    if (btn2.click())
+    {
+      if (timerOn)
       {
-        mainMenuItem = 5;
+        // показать таймер
+      }
+      if (!timerOn)
+      {
+        setTimer();
       }
     }
-    if (btn4.click())
+  }
+  if (mainMenuItem == 3)
+  {
+    disp.displayByte(_L, _o, _u, _d);
+    if (btn2.click())
     {
-      mainMenuItem = mainMenuItem + 1;
-      if (mainMenuItem > 5)
-      {
-        mainMenuItem = 0;
-      }
+      setVolume();
     }
-    if (mainMenuItem == 0)
+  }
+  if (mainMenuItem == 4)
+  {
+    disp.displayByte(_P, _L, _A, _Y);
+    if (btn2.click())
     {
-      disp.displayByte(_C, _L, _O, _empty);
-      if (btn2.click())
-      {
-        setTime();
-      }
+      playMusicMenu();
     }
-    if (mainMenuItem == 1)
-    {
-      disp.displayByte(_a, _L, _r, _empty);
-      if (btn2.click())
-      {
-        alarmOnOff();
-      }
-    }
-    if (mainMenuItem == 2)
-    {
-      disp.displayByte(_C, _h, _r, _o);
-      if (btn2.click())
-      {
-        if (timerOn)
-        {
-          // показать таймер
-        }
-        if (!timerOn)
-        {
-          setTimer();
-        }
-      }
-    }
-    if (mainMenuItem == 3)
-    {
-      disp.displayByte(_L, _o, _u, _d);
-      if (btn2.click())
-      {
-        setVolume();
-      }
-    }
-    if (mainMenuItem == 4)
-    {
-      disp.displayByte(_P, _L, _A, _Y);
-      if (btn2.click())
-      {
-        playMusicMenu();
-      }
-    }
-    if (mainMenuItem == 5)
-    {
-      disp.displayByte(fw_version);
-    }
-    if (btn1.click()) // Выход из меню
-    {
-      disp.displayByte(_E, _S, _C, _empty);
-      menuActive = false;
-      btn1.reset();
-      delay(1000);
-      return;
-    }
+  }
+  if (mainMenuItem == 5)
+  {
+    disp.displayByte(fw_version);
+  }
+  if (btn1.click()) // Выход из меню
+  {
+    disp.displayByte(_E, _S, _C, _empty);
+    menuActive = false;
+    btn1.reset();
+    delay(1000);
+    return;
+  }
 }
 
 void alarmOnOff()
@@ -1292,7 +1289,7 @@ void playMusicMenu()
     disp.point(false);
     if (btn3.click())
     {
-      mainMenuItem = mainMenuItem -1;
+      mainMenuItem = mainMenuItem - 1;
       if (mainMenuItem < 0)
       {
         mainMenuItem = 3;
