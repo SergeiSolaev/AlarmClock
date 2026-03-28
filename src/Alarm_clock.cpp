@@ -7,7 +7,7 @@
 #include "GyverPower.h"
 #include "EncButton.h"
 
-#define FW_VERSION "1.4.5"
+#define FW_VERSION "1.4.6"
 
 // ===== HARDWARE =====
 
@@ -133,8 +133,10 @@ uint8_t chargeBattery[] = {_C, _H, _A, _r, _G, _E, _empty, _b, _A, _t, _t, _E, _
 bool buttonsBlocked = false;
 bool justWoke = false;
 bool justWokeBlockMenu = false;
+bool menuActive = false;
+bool mainMenuActive = false;
 
-int8_t mainMenuItem;
+int8_t mainMenuItem = 0;
 
 
 // ===== Прототипы функций =====
@@ -176,7 +178,6 @@ void nextTrack();
 void stopMusic();
 void setVolumeMusic();
 void flashLight();
-void printTime();
 
 void setup()
 {
@@ -244,6 +245,12 @@ void loop()
     }
   }
 
+  if (menuActive)
+  {
+    menu();
+  }
+  
+
   // Обновление времени из rtc модуля DS3231
   // Периодичность раз в секунду
   if (millis() - updateTimeTimer > 1000)
@@ -255,8 +262,11 @@ void loop()
   // Показ времени на индикаторе
   if (millis() - displayClockTimer > 500)
   {
-    displayClockTimer = millis();
-    displayClock(hrs, min);
+    if (!menuActive)
+    {
+      displayClockTimer = millis();
+      displayClock(hrs, min);
+    }
   }
   
   // Регулировка яркости
@@ -273,33 +283,33 @@ void loop()
   }
 
   // Вызов меню настроек времени и будильника (короткое нажатие BTN_1)
-  if (btn1.click() && !buttonsBlocked)
+  if (btn1.click() && !buttonsBlocked && !menuActive)
   {
-    menu();
+    menuActive = true;
   }
 
   // Показ температуры (встроенный в DS3231 датчик) 
   // Показ даты
-  if (btn2.click() && !buttonsBlocked)
+  if (btn2.click() && !buttonsBlocked && !menuActive)
   {
     showTemperature();
     showDate();
   }
   
   // Выключение отображения часов и уход в сон (удержание BTN_2)
-  if (btn2.hold() && !buttonsBlocked)
+  if (btn2.hold() && !buttonsBlocked && !menuActive)
   {
     clockOn = false;
   }
 
   // Показать напряжение батареи (короткое нажатие BTN_3)
-  if (btn3.click() && !buttonsBlocked)
+  if (btn3.click() && !buttonsBlocked && !menuActive)
   {
     showVoltage(voltageMeasure());
   }
 
   // Включение фонарика (короткое нажатие BTN_4)
-  if (btn4.click() && !buttonsBlocked)
+  if (btn4.click() && !buttonsBlocked && !menuActive)
   {
     flashLight();
   }
@@ -896,12 +906,6 @@ void stopVibro()
 // Меню
 void menu()
 {
-  mainMenuItem = 0;
-  while (true)
-  {
-    // Опрашиваем кнопки в цикле меню
-    updateButtons();
-
     disp.point(false);
     if (btn3.click())
     {
@@ -925,13 +929,6 @@ void menu()
       if (btn2.click())
       {
         setTime();
-        break;
-      }
-      if (btn1.click()) // Выход из меню
-      {
-        disp.displayByte(_E, _S, _C, _empty);
-        delay(1000);
-        break;
       }
     }
     if (mainMenuItem == 1)
@@ -940,12 +937,6 @@ void menu()
       if (btn2.click())
       {
         alarmOnOff();
-      }
-      if (btn1.click()) // Выход из меню
-      {
-        disp.displayByte(_E, _S, _C, _empty);
-        delay(1000);
-        break;
       }
     }
     if (mainMenuItem == 2)
@@ -962,12 +953,6 @@ void menu()
           setTimer();
         }
       }
-      if (btn1.click()) // Выход из меню
-      {
-        disp.displayByte(_E, _S, _C, _empty);
-        delay(1000);
-        break;
-      }
     }
     if (mainMenuItem == 3)
     {
@@ -975,12 +960,6 @@ void menu()
       if (btn2.click())
       {
         setVolume();
-      }
-      if (btn1.click()) // Выход из меню
-      {
-        disp.displayByte(_E, _S, _C, _empty);
-        delay(1000);
-        break;
       }
     }
     if (mainMenuItem == 4)
@@ -990,24 +969,19 @@ void menu()
       {
         playMusicMenu();
       }
-      if (btn1.click()) // Выход из меню
-      {
-        disp.displayByte(_E, _S, _C, _empty);
-        delay(1000);
-        break;
-      }
     }
     if (mainMenuItem == 5)
     {
       disp.displayByte(fw_version);
-      if (btn1.click()) // Выход из меню
-      {
-        disp.displayByte(_E, _S, _C, _empty);
-        delay(1000);
-        break;
-      }
     }
-  }
+    if (btn1.click()) // Выход из меню
+    {
+      disp.displayByte(_E, _S, _C, _empty);
+      menuActive = false;
+      btn1.reset();
+      delay(1000);
+      return;
+    }
 }
 
 void alarmOnOff()
