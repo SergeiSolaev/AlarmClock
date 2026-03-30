@@ -134,6 +134,7 @@ bool justWoke = false;
 bool justWokeBlockMenu = false;
 bool menuActive = false;
 bool mainMenuActive = false;
+bool setTimeMenuActive = false;
 
 int8_t mainMenuItem = 0;
 
@@ -243,9 +244,14 @@ void loop()
     }
   }
 
-  if (menuActive)
+  if (mainMenuActive)
   {
     menu();
+  }
+
+  if (setTimeMenuActive)
+  {
+    setTime();
   }
 
   // Обновление времени из rtc модуля DS3231
@@ -283,6 +289,7 @@ void loop()
   if (btn1.click() && !buttonsBlocked && !menuActive)
   {
     menuActive = true;
+    mainMenuActive = true;
   }
 
   // Показ температуры (встроенный в DS3231 датчик)
@@ -903,81 +910,86 @@ void stopVibro()
 // Меню
 void menu()
 {
-  disp.point(false);
-  if (btn3.click())
+  if (mainMenuActive)
   {
-    mainMenuItem = mainMenuItem - 1;
-    if (mainMenuItem < 0)
+    disp.point(false);
+    if (btn3.click())
     {
-      mainMenuItem = 5;
-    }
-  }
-  if (btn4.click())
-  {
-    mainMenuItem = mainMenuItem + 1;
-    if (mainMenuItem > 5)
-    {
-      mainMenuItem = 0;
-    }
-  }
-  if (mainMenuItem == 0)
-  {
-    disp.displayByte(_C, _L, _O, _empty);
-    if (btn2.click())
-    {
-      setTime();
-    }
-  }
-  if (mainMenuItem == 1)
-  {
-    disp.displayByte(_a, _L, _r, _empty);
-    if (btn2.click())
-    {
-      alarmOnOff();
-    }
-  }
-  if (mainMenuItem == 2)
-  {
-    disp.displayByte(_C, _h, _r, _o);
-    if (btn2.click())
-    {
-      if (timerOn)
+      mainMenuItem = mainMenuItem - 1;
+      if (mainMenuItem < 0)
       {
-        // показать таймер
-      }
-      if (!timerOn)
-      {
-        setTimer();
+        mainMenuItem = 5;
       }
     }
-  }
-  if (mainMenuItem == 3)
-  {
-    disp.displayByte(_L, _o, _u, _d);
-    if (btn2.click())
+    if (btn4.click())
     {
-      setVolume();
+      mainMenuItem = mainMenuItem + 1;
+      if (mainMenuItem > 5)
+      {
+        mainMenuItem = 0;
+      }
     }
-  }
-  if (mainMenuItem == 4)
-  {
-    disp.displayByte(_P, _L, _A, _Y);
-    if (btn2.click())
+    if (mainMenuItem == 0)
     {
-      playMusicMenu();
+      disp.displayByte(_C, _L, _O, _empty);
+      if (btn2.click())
+      {
+        setTimeMenuActive = true;
+        mainMenuActive = false;
+      }
     }
-  }
-  if (mainMenuItem == 5)
-  {
-    disp.displayByte(fw_version);
-  }
-  if (btn1.click()) // Выход из меню
-  {
-    disp.displayByte(_E, _S, _C, _empty);
-    menuActive = false;
-    btn1.reset();
-    delay(1000);
-    return;
+    if (mainMenuItem == 1)
+    {
+      disp.displayByte(_a, _L, _r, _empty);
+      if (btn2.click())
+      {
+        alarmOnOff();
+      }
+    }
+    if (mainMenuItem == 2)
+    {
+      disp.displayByte(_C, _h, _r, _o);
+      if (btn2.click())
+      {
+        if (timerOn)
+        {
+          // показать таймер
+        }
+        if (!timerOn)
+        {
+          setTimer();
+        }
+      }
+    }
+    if (mainMenuItem == 3)
+    {
+      disp.displayByte(_L, _o, _u, _d);
+      if (btn2.click())
+      {
+        setVolume();
+      }
+    }
+    if (mainMenuItem == 4)
+    {
+      disp.displayByte(_P, _L, _A, _Y);
+      if (btn2.click())
+      {
+        playMusicMenu();
+      }
+    }
+    if (mainMenuItem == 5)
+    {
+      disp.displayByte(fw_version);
+    }
+    if (btn1.click()) // Выход из меню
+    {
+      disp.displayByte(_E, _S, _C, _empty);
+      menuActive = false;
+      mainMenuActive = false;
+      btn1.reset();
+      delay(1000);
+      return;
+    }
   }
 }
 
@@ -1183,6 +1195,8 @@ void setTime()
       rtc.adjust(newTime); // Устанавливаем новое время
       // Обновляем глобальные переменные времени
       updateDateTime();
+      setTimeMenuActive = false;
+      mainMenuActive = true;
       disp.point(false);
       disp.displayByte(_d, _O, _n, _E);
       delay(1000);
@@ -1190,6 +1204,8 @@ void setTime()
     }
     if (btn1.click()) // Выход из меню
     {
+      setTimeMenuActive = false;
+      mainMenuActive = true;
       disp.displayByte(_E, _S, _C, _empty);
       delay(1000);
       break;
