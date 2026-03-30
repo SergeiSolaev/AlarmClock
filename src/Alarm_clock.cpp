@@ -127,9 +127,7 @@ uint8_t fw_version[] = {
 // Сообщение "Зарядите батарею"
 uint8_t chargeBattery[] = {_C, _H, _A, _r, _G, _E, _empty, _b, _A, _t, _t, _E, _r, _Y};
 
-// ===== MENU / UI =====
-
-//       MAIN MENU
+// ===== MAIN MENU =====
 bool buttonsBlocked = false;
 bool justWoke = false;
 bool justWokeBlockMenu = false;
@@ -137,7 +135,7 @@ bool menuActive = false;
 bool mainMenuActive = false;
 int8_t mainMenuItem = 0;
 
-//      SET TIME MENU
+// ===== SET TIME MENU =====
 uint8_t clockMinTmp;
 uint8_t clockHrsTmp;
 uint8_t clockDate;
@@ -145,6 +143,9 @@ uint8_t clockMonth;
 int clockYear;
 bool setTimeMenuActive = false;
 bool setTimeMenuDateTimeUpdate = false;
+
+// ===== ALARM ON/OFF MENU =====
+bool alarmOnOffMenuActive = false;
 
 //     BUTTON HOLD CHANGING
 uint32_t lastHourChangeTime = 0;
@@ -180,7 +181,7 @@ void stopAlarm();
 void startVibro();
 void stopVibro();
 void menu();
-void alarmOnOff();
+void alarmOnOffMenu();
 void setAlarm();
 void setTime();
 void setVolume();
@@ -266,6 +267,11 @@ void loop()
   if (setTimeMenuActive)
   {
     setTime();
+  }
+
+  if (alarmOnOffMenuActive)
+  {
+    alarmOnOffMenu();
   }
 
   // Обновление времени из rtc модуля DS3231
@@ -958,7 +964,9 @@ void menu()
       disp.displayByte(_a, _L, _r, _empty);
       if (btn2.click())
       {
-        alarmOnOff();
+        btn2.reset();
+        mainMenuActive = false;
+        alarmOnOffMenuActive = true;
       }
     }
     if (mainMenuItem == 2)
@@ -1008,49 +1016,54 @@ void menu()
   }
 }
 
-void alarmOnOff()
+void alarmOnOffMenu()
 {
-  while (true)
+  if (btn3.click())
   {
-    updateButtons();
-    if (btn3.click())
+    alarmMenuState = !alarmMenuState;
+  }
+  if (btn4.click())
+  {
+    alarmMenuState = !alarmMenuState;
+  }
+  if (alarmMenuState)
+  {
+    disp.displayByte(_empty, _empty, _O, _n);
+    if (btn2.click())
     {
-      alarmMenuState = !alarmMenuState;
+      btn2.reset();
+      EEPROM.update(2, 1);
+      alarmOn = true;
+      setAlarm();
+      alarmOnOffMenuActive = false;
+      mainMenuActive = true;
+      return;
     }
-    if (btn4.click())
+  }
+  if (!alarmMenuState)
+  {
+    disp.displayByte(_empty, _O, _F, _F);
+    if (btn2.click())
     {
-      alarmMenuState = !alarmMenuState;
-    }
-    if (alarmMenuState)
-    {
-      disp.displayByte(_empty, _empty, _O, _n);
-      if (btn2.click())
-      {
-        EEPROM.update(2, 1);
-        alarmOn = true;
-        setAlarm();
-        break;
-      }
-    }
-    if (!alarmMenuState)
-    {
-      disp.displayByte(_empty, _O, _F, _F);
-      if (btn2.click())
-      {
-        EEPROM.update(2, 0);
-        alarmOn = false;
-        rtc.disableAlarm(1);
-        disp.displayByte(_d, _O, _n, _E);
-        delay(1000);
-        break;
-      }
-    }
-    if (btn1.click()) // Выход из меню
-    {
-      disp.displayByte(_E, _S, _C, _empty);
+      btn2.reset();
+      EEPROM.update(2, 0);
+      alarmOn = false;
+      rtc.disableAlarm(1);
+      alarmOnOffMenuActive = false;
+      mainMenuActive = true;
+      disp.displayByte(_d, _O, _n, _E);
       delay(1000);
-      break;
+      return;
     }
+  }
+  if (btn1.click()) // Выход из меню
+  {
+    btn1.reset();
+    alarmOnOffMenuActive = false;
+    mainMenuActive = true;
+    disp.displayByte(_E, _S, _C, _empty);
+    delay(1000);
+    return;
   }
 }
 
