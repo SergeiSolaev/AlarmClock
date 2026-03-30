@@ -129,14 +129,28 @@ uint8_t chargeBattery[] = {_C, _H, _A, _r, _G, _E, _empty, _b, _A, _t, _t, _E, _
 
 // ===== MENU / UI =====
 
+//       MAIN MENU
 bool buttonsBlocked = false;
 bool justWoke = false;
 bool justWokeBlockMenu = false;
 bool menuActive = false;
 bool mainMenuActive = false;
-bool setTimeMenuActive = false;
-
 int8_t mainMenuItem = 0;
+
+//      SET TIME MENU
+uint8_t clockMinTmp;
+uint8_t clockHrsTmp;
+uint8_t clockDate;
+uint8_t clockMonth;
+int clockYear;
+bool setTimeMenuActive = false;
+bool setTimeMenuDateTimeUpdate = false;
+
+//     BUTTON HOLD CHANGING
+uint32_t lastHourChangeTime = 0;
+uint32_t lastMinuteChangeTime = 0;
+uint16_t INITIAL_DELAY = 500;   // Начальная задержка перед первым изменением
+uint16_t CHANGE_INTERVAL = 500; // Интервал между изменениями
 
 // ===== Прототипы функций =====
 void initializeClock();
@@ -934,6 +948,7 @@ void menu()
       disp.displayByte(_C, _L, _O, _empty);
       if (btn2.click())
       {
+        btn2.reset();
         setTimeMenuActive = true;
         mainMenuActive = false;
       }
@@ -1129,23 +1144,20 @@ void setAlarm()
 // Установка времени часов rtc DS3231
 void setTime()
 {
-  DateTime now = rtc.now();
-  byte clockMinTmp = now.minute();
-  byte clockHrsTmp = now.hour();
-  // Используем текущую дату из RTC
-  byte clockDate = now.day();
-  byte clockMonth = now.month();
-  int clockYear = now.year();
-  uint32_t lastHourChangeTime = 0;
-  uint32_t lastMinuteChangeTime = 0;
-  const uint16_t INITIAL_DELAY = 500;   // Начальная задержка перед первым изменением
-  const uint16_t CHANGE_INTERVAL = 500; // Интервал между изменениями
-
-  while (true)
+  if (setTimeMenuActive)
   {
-    uint32_t currentTime = millis();
 
-    updateButtons();
+    if (!setTimeMenuDateTimeUpdate)
+    {
+      clockMinTmp = min;
+      clockHrsTmp = hrs;
+      clockDate = day;
+      clockMonth = month;
+      clockYear = year;
+      setTimeMenuDateTimeUpdate = true;
+    }
+
+    uint32_t currentTime = millis();
 
     // Увеличение часов при клике кнопки 3 (однократное нажатие)
     if (btn3.click())
@@ -1197,18 +1209,23 @@ void setTime()
       updateDateTime();
       setTimeMenuActive = false;
       mainMenuActive = true;
+      setTimeMenuDateTimeUpdate = false;
       disp.point(false);
       disp.displayByte(_d, _O, _n, _E);
+      btn2.reset();
       delay(1000);
-      break;
+      return;
     }
     if (btn1.click()) // Выход из меню
     {
       setTimeMenuActive = false;
       mainMenuActive = true;
+      setTimeMenuDateTimeUpdate = false;
+      disp.point(false);
       disp.displayByte(_E, _S, _C, _empty);
+      btn1.reset();
       delay(1000);
-      break;
+      return;
     }
     // Отображение текущего времени
     disp.displayClock(clockHrsTmp, clockMinTmp);
