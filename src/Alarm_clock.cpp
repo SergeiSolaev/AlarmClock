@@ -154,6 +154,12 @@ bool setAlarmActive;
 uint8_t alarmHrsTmp;
 uint8_t alarmMinTmp;
 
+// ===== SET VOLUME MENU =====
+bool setVolumeActive = false;
+bool setVolumeInitialized = false;
+uint8_t setVolumeTmp;
+uint32_t setVolTimer;
+
 //     BUTTON HOLD CHANGING
 uint32_t lastHourChangeTime = 0;
 uint32_t lastMinuteChangeTime = 0;
@@ -285,7 +291,11 @@ void loop()
   {
     setAlarm();
   }
-  
+
+  if (setVolumeActive)
+  {
+    setVolume();
+  }
 
   // Обновление времени из rtc модуля DS3231
   // Периодичность раз в секунду
@@ -1002,7 +1012,9 @@ void menu()
       disp.displayByte(_L, _o, _u, _d);
       if (btn2.click())
       {
-        setVolume();
+        btn2.reset();
+        mainMenuActive = false;
+        setVolumeActive = true;
       }
     }
     if (mainMenuItem == 4)
@@ -1262,77 +1274,77 @@ void setTime()
 // Установка уровня громкости
 void setVolume()
 {
-  byte currentVolume = alarmVolume; // Начальное значение громкости
-  uint32_t setVolTimer;
-  digitalWrite(MUSIC_MOSFET, HIGH);
-  delay(500);
-  disp.displayInt(currentVolume);
-  myMP3.volume(currentVolume);
-  delay(50);
-  myMP3.playFolder(1, 1);
-
-  while (true)
+  if (!setVolumeInitialized)
   {
-    updateButtons();
-
-    // Увеличение громкости
-    if (btn4.click())
-    {
-      disp.displayInt(currentVolume);
-      if (currentVolume < 30)
-      { // Максимальная громкость 30
-        currentVolume++;
-        if (setVolTimer + millis() > 500) // Уменьшено с 1000 до 500 мс
-        {
-          myMP3.volume(currentVolume);
-          delay(50);
-          myMP3.playFolder(1, 1);
-          setVolTimer = millis();
-        }
-      }
-    }
-
-    // Уменьшение громкости
-    if (btn3.click())
-    {
-      if (currentVolume > 0)
-      { // Минимальная громкость 0
-        currentVolume--;
-        if (setVolTimer + millis() > 500) // Уменьшено с 1000 до 500 мс
-        {
-          myMP3.volume(currentVolume);
-          delay(50);
-          myMP3.playFolder(1, 1);
-          setVolTimer = millis();
-        }
-      }
-    }
-
-    // Подтверждение выбора
-    if (btn2.click())
-    {
-      alarmVolume = currentVolume;
-      EEPROM.update(3, alarmVolume);
-      myMP3.volume(alarmVolume);
-      disp.displayByte(_d, _O, _n, _E);
-      delay(1000);
-      digitalWrite(MUSIC_MOSFET, LOW);
-      break;
-    }
-
-    // Выход без сохранения
-    if (btn1.click())
-    {
-      disp.displayByte(_E, _S, _C, _empty);
-      delay(1000);
-      digitalWrite(MUSIC_MOSFET, LOW);
-      break;
-    }
-
-    // Отображение текущего уровня громкости
-    disp.displayInt(currentVolume);
-    delay(50); // Уменьшено с 100 до 50 мс
+    setVolumeTmp = alarmVolume;
+    setVolumeInitialized = true;
+    digitalWrite(MUSIC_MOSFET, HIGH);
+    delay(500);
+    disp.displayInt(setVolumeTmp);
+    myMP3.volume(setVolumeTmp);
+    delay(50);
+    myMP3.playFolder(1, 1);
   }
+
+  // Увеличение громкости
+  if (btn4.click())
+  {
+    disp.displayInt(setVolumeTmp);
+    if (setVolumeTmp < 30)
+    { // Максимальная громкость 30
+      setVolumeTmp++;
+      if (setVolTimer + millis() > 500) // Уменьшено с 1000 до 500 мс
+      {
+        myMP3.volume(setVolumeTmp);
+        setVolTimer = millis();
+      }
+    }
+  }
+
+  // Уменьшение громкости
+  if (btn3.click())
+  {
+    if (setVolumeTmp > 0)
+    { // Минимальная громкость 0
+      setVolumeTmp--;
+      if (setVolTimer + millis() > 500) // Уменьшено с 1000 до 500 мс
+      {
+        myMP3.volume(setVolumeTmp);
+        setVolTimer = millis();
+      }
+    }
+  }
+
+  // Подтверждение выбора
+  if (btn2.click())
+  {
+    alarmVolume = setVolumeTmp;
+    EEPROM.update(3, alarmVolume);
+    myMP3.volume(alarmVolume);
+    disp.displayByte(_d, _O, _n, _E);
+    delay(1000);
+    digitalWrite(MUSIC_MOSFET, LOW);
+    setVolumeInitialized = false;
+    setVolumeActive = false;
+    mainMenuActive = true;
+    return;
+  }
+
+  // Выход без сохранения
+  if (btn1.click())
+  {
+    disp.displayByte(_E, _S, _C, _empty);
+    delay(1000);
+    digitalWrite(MUSIC_MOSFET, LOW);
+    setVolumeInitialized = false;
+    setVolumeActive = false;
+    mainMenuActive = true;
+    return;
+  }
+
+  // Отображение текущего уровня громкости
+  disp.displayInt(setVolumeTmp);
+  delay(50); // Уменьшено с 100 до 50 мс
 }
 
 // Меню воспроизведения музыки
