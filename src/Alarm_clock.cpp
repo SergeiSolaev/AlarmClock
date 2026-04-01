@@ -147,6 +147,13 @@ bool setTimeMenuDateTimeUpdate = false;
 // ===== ALARM ON/OFF MENU =====
 bool alarmOnOffMenuActive = false;
 
+// ===== SET ALARM MENU =====
+bool setAlarmDateTimeUpdated;
+bool setAlarmActive;
+
+uint8_t alarmHrsTmp;
+uint8_t alarmMinTmp;
+
 //     BUTTON HOLD CHANGING
 uint32_t lastHourChangeTime = 0;
 uint32_t lastMinuteChangeTime = 0;
@@ -273,6 +280,12 @@ void loop()
   {
     alarmOnOffMenu();
   }
+
+  if (setAlarmActive)
+  {
+    setAlarm();
+  }
+  
 
   // Обновление времени из rtc модуля DS3231
   // Периодичность раз в секунду
@@ -1034,9 +1047,8 @@ void alarmOnOffMenu()
       btn2.reset();
       EEPROM.update(2, 1);
       alarmOn = true;
-      setAlarm();
       alarmOnOffMenuActive = false;
-      mainMenuActive = true;
+      setAlarmActive = true;
       return;
     }
   }
@@ -1070,88 +1082,89 @@ void alarmOnOffMenu()
 // Установка времени срабатывания будильника
 void setAlarm()
 {
-  byte alarmHrsTmp = alarmHrs;
-  byte alarmMinTmp = alarmMin;
-  uint32_t lastHourChangeTime = 0;
-  uint32_t lastMinuteChangeTime = 0;
-  const uint16_t INITIAL_DELAY = 500;   // Начальная задержка перед первым изменением
-  const uint16_t CHANGE_INTERVAL = 500; // Интервал между изменениями
-
-  while (true)
+  if (!setAlarmDateTimeUpdated)
   {
-    uint32_t currentTime = millis();
-
-    updateButtons();
-
-    // Увеличение часов при клике кнопки 3 (однократное нажатие)
-    if (btn3.click())
-    {
-      alarmHrsTmp = (alarmHrsTmp + 1) % 24;
-    }
-
-    // Увеличение часов при удержании кнопки 3
-    if (btn3.pressing())
-    { // кнопка нажата в данный момент
-      uint16_t pressDuration = btn3.pressFor();
-      if (pressDuration >= INITIAL_DELAY)
-      {
-        if (lastHourChangeTime == 0 || (currentTime - lastHourChangeTime >= CHANGE_INTERVAL))
-        {
-          alarmHrsTmp = (alarmHrsTmp + 1) % 24;
-          lastHourChangeTime = currentTime;
-        }
-      }
-    }
-
-    // Увеличение минут при клике кнопки 4 (однократное нажатие)
-    if (btn4.click())
-    {
-      alarmMinTmp = (alarmMinTmp + 1) % 60;
-    }
-
-    // Увеличение минут при удержании кнопки 4
-    if (btn4.pressing())
-    { // кнопка нажата в данный момент
-      uint16_t pressDuration = btn4.pressFor();
-      if (pressDuration >= INITIAL_DELAY)
-      {
-        if (lastMinuteChangeTime == 0 || (currentTime - lastMinuteChangeTime >= CHANGE_INTERVAL))
-        {
-          alarmMinTmp = (alarmMinTmp + 1) % 60;
-          lastMinuteChangeTime = currentTime;
-        }
-      }
-    }
-
-    // Подтверждение установки
-    if (btn2.click())
-    {
-      EEPROM.update(0, alarmHrsTmp);
-      EEPROM.update(1, alarmMinTmp);
-      alarmHrs = alarmHrsTmp;
-      alarmMin = alarmMinTmp;
-      DateTime now = rtc.now();
-      DateTime alarmTime(now.year(), now.month(), now.day(), alarmHrsTmp, alarmMinTmp, 0);
-      // Устанавливаем Alarm1 для срабатывания каждый день в указанное время
-      // DS3231_A1_Hour - срабатывает когда совпадают часы, минуты и секунды
-      rtc.setAlarm1(alarmTime, DS3231_A1_Hour);
-      delay(10);
-      rtc.clearAlarm(1);
-      disp.point(false);
-      disp.displayByte(_d, _O, _n, _E);
-      delay(1000);
-      break;
-    }
-    if (btn1.click()) // Выход из меню
-    {
-      disp.displayByte(_E, _S, _C, _empty);
-      delay(1000);
-      break;
-    }
-    // Отображение текущего времени будильника
-    disp.displayClock(alarmHrsTmp, alarmMinTmp);
-    delay(50); // Уменьшено с 100 до 50 мс для более быстрого обновления
+    alarmHrsTmp = alarmHrs;
+    alarmMinTmp = alarmMin;
+    setAlarmDateTimeUpdated = true;
   }
+
+  uint32_t currentTime = millis();
+
+  // Увеличение часов при клике кнопки 3 (однократное нажатие)
+  if (btn3.click())
+  {
+    alarmHrsTmp = (alarmHrsTmp + 1) % 24;
+  }
+
+  // Увеличение часов при удержании кнопки 3
+  if (btn3.pressing())
+  { // кнопка нажата в данный момент
+    uint16_t pressDuration = btn3.pressFor();
+    if (pressDuration >= INITIAL_DELAY)
+    {
+      if (lastHourChangeTime == 0 || (currentTime - lastHourChangeTime >= CHANGE_INTERVAL))
+      {
+        alarmHrsTmp = (alarmHrsTmp + 1) % 24;
+        lastHourChangeTime = currentTime;
+      }
+    }
+  }
+
+  // Увеличение минут при клике кнопки 4 (однократное нажатие)
+  if (btn4.click())
+  {
+    alarmMinTmp = (alarmMinTmp + 1) % 60;
+  }
+
+  // Увеличение минут при удержании кнопки 4
+  if (btn4.pressing())
+  { // кнопка нажата в данный момент
+    uint16_t pressDuration = btn4.pressFor();
+    if (pressDuration >= INITIAL_DELAY)
+    {
+      if (lastMinuteChangeTime == 0 || (currentTime - lastMinuteChangeTime >= CHANGE_INTERVAL))
+      {
+        alarmMinTmp = (alarmMinTmp + 1) % 60;
+        lastMinuteChangeTime = currentTime;
+      }
+    }
+  }
+
+  // Подтверждение установки
+  if (btn2.click())
+  {
+    EEPROM.update(0, alarmHrsTmp);
+    EEPROM.update(1, alarmMinTmp);
+    alarmHrs = alarmHrsTmp;
+    alarmMin = alarmMinTmp;
+    DateTime now = rtc.now();
+    DateTime alarmTime(now.year(), now.month(), now.day(), alarmHrsTmp, alarmMinTmp, 0);
+    // Устанавливаем Alarm1 для срабатывания каждый день в указанное время
+    // DS3231_A1_Hour - срабатывает когда совпадают часы, минуты и секунды
+    rtc.setAlarm1(alarmTime, DS3231_A1_Hour);
+    delay(10);
+    rtc.clearAlarm(1);
+    disp.point(false);
+    disp.displayByte(_d, _O, _n, _E);
+    setAlarmDateTimeUpdated = false;
+    setAlarmActive = false;
+    alarmOnOffMenuActive = true;
+    delay(1000);
+    return;
+  }
+  if (btn1.click()) // Выход из меню
+  {
+    disp.displayByte(_E, _S, _C, _empty);
+    setAlarmDateTimeUpdated = false;
+    setAlarmActive = false;
+    alarmOnOffMenuActive = true;
+    delay(1000);
+    return;
+  }
+  // Отображение текущего времени будильника
+  disp.displayClock(alarmHrsTmp, alarmMinTmp);
+  delay(50); // Уменьшено с 100 до 50 мс для более быстрого обновления
 }
 
 // Установка времени часов rtc DS3231
