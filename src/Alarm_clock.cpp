@@ -154,6 +154,12 @@ bool setAlarmActive;
 uint8_t alarmHrsTmp;
 uint8_t alarmMinTmp;
 
+// ===== SET TIMER MENU =====
+bool setTimerInitialized = false;
+bool setTimerActive = false;
+int timerMinuteSetTmp;
+int timerSecondSetTmp;
+
 // ===== SET VOLUME MENU =====
 bool setVolumeActive = false;
 bool setVolumeInitialized = false;
@@ -300,6 +306,11 @@ void loop()
   if (setAlarmActive)
   {
     setAlarm();
+  }
+
+  if (setTimerActive)
+  {
+    setTimer();
   }
 
   if (setVolumeActive)
@@ -555,86 +566,85 @@ void activateAlarm()
 // Установка таймера
 void setTimer()
 {
-  int timerMinuteSetTmp = timerMinuteSet;
-  int timerSecondSetTmp = timerSecondSet;
-  uint32_t lastMinuteChangeTime = 0;
-  const uint16_t INITIAL_DELAY = 500;   // Начальная задержка перед первым изменением
-  const uint16_t CHANGE_INTERVAL = 500; // Интервал между изменениями
 
-  while (true)
+  if (!setTimerInitialized)
   {
-    uint32_t currentTime = millis();
-
-    updateButtons();
-
-    // Уменьшение минут при клике кнопки 3 (однократное нажатие)
-    if (btn3.click())
-    {
-      timerMinuteSetTmp = timerMinuteSetTmp - 1;
-      if (timerMinuteSetTmp < 0)
-      {
-        timerMinuteSetTmp = 99;
-      }
-    }
-    // Уменьшение минут при удержании кнопки 3
-    if (btn3.pressing())
-    {
-      uint16_t pressDuration = btn3.pressFor();
-      if (pressDuration >= INITIAL_DELAY)
-      {
-        if (lastMinuteChangeTime == 0 || (currentTime - lastMinuteChangeTime >= CHANGE_INTERVAL))
-        {
-          timerMinuteSetTmp = timerMinuteSetTmp - 1;
-          if (timerMinuteSetTmp < 0)
-          {
-            timerMinuteSetTmp = 99;
-          }
-          lastMinuteChangeTime = currentTime;
-        }
-      }
-    }
-    // Увеличение минут при клике кнопки 4 (однократное нажатие)
-    if (btn4.click())
-    {
-      timerMinuteSetTmp = (timerMinuteSetTmp + 1) % 99;
-    }
-    // Увеличение минут при удержании кнопки 4
-    if (btn4.pressing())
-    {
-      uint16_t pressDuration = btn4.pressFor();
-      if (pressDuration >= INITIAL_DELAY)
-      {
-        if (lastMinuteChangeTime == 0 || (currentTime - lastMinuteChangeTime >= CHANGE_INTERVAL))
-        {
-          timerMinuteSetTmp = (timerMinuteSetTmp + 1) % 99;
-          lastMinuteChangeTime = currentTime;
-        }
-      }
-    }
-    // Подтверждение установки
-    if (btn2.click())
-    {
-      timerMinuteSet = timerMinuteSetTmp;
-      timerSecondSet = timerSecondSetTmp;
-      timerOn = true;
-      disp.point(false);
-      disp.displayByte(_S, _t, _r, _t);
-      delay(500);
-      runCountDownTimer();
-      break;
-    }
-    if (btn1.click()) // Выход из меню
-    {
-      disp.point(false);
-      disp.displayByte(_E, _S, _C, _empty);
-      delay(1000);
-      break;
-    }
-    // Отображение текущего времени будильника
-    disp.displayClock(timerMinuteSetTmp, timerSecondSetTmp);
-    disp.point(true);
-    delay(50);
+    timerMinuteSetTmp = timerMinuteSet;
+    timerSecondSetTmp = timerSecondSet;
+    setTimerInitialized = true;
   }
+
+  uint32_t currentTime = millis();
+
+  // Уменьшение минут при клике кнопки 3 (однократное нажатие)
+  if (btn3.click())
+  {
+    timerMinuteSetTmp = timerMinuteSetTmp - 1;
+    if (timerMinuteSetTmp < 0)
+    {
+      timerMinuteSetTmp = 99;
+    }
+  }
+  // Уменьшение минут при удержании кнопки 3
+  if (btn3.pressing())
+  {
+    uint16_t pressDuration = btn3.pressFor();
+    if (pressDuration >= INITIAL_DELAY)
+    {
+      if (lastMinuteChangeTime == 0 || (currentTime - lastMinuteChangeTime >= CHANGE_INTERVAL))
+      {
+        timerMinuteSetTmp = timerMinuteSetTmp - 1;
+        if (timerMinuteSetTmp < 0)
+        {
+          timerMinuteSetTmp = 99;
+        }
+        lastMinuteChangeTime = currentTime;
+      }
+    }
+  }
+  // Увеличение минут при клике кнопки 4 (однократное нажатие)
+  if (btn4.click())
+  {
+    timerMinuteSetTmp = (timerMinuteSetTmp + 1) % 99;
+  }
+  // Увеличение минут при удержании кнопки 4
+  if (btn4.pressing())
+  {
+    uint16_t pressDuration = btn4.pressFor();
+    if (pressDuration >= INITIAL_DELAY)
+    {
+      if (lastMinuteChangeTime == 0 || (currentTime - lastMinuteChangeTime >= CHANGE_INTERVAL))
+      {
+        timerMinuteSetTmp = (timerMinuteSetTmp + 1) % 99;
+        lastMinuteChangeTime = currentTime;
+      }
+    }
+  }
+  // Подтверждение установки
+  if (btn2.click())
+  {
+    timerMinuteSet = timerMinuteSetTmp;
+    timerSecondSet = timerSecondSetTmp;
+    timerOn = true;
+    disp.point(false);
+    disp.displayByte(_S, _t, _r, _t);
+    delay(500);
+    runCountDownTimer();
+    return;
+  }
+  if (btn1.click()) // Выход из меню
+  {
+    disp.point(false);
+    disp.displayByte(_E, _S, _C, _empty);
+    setTimerActive = false;
+    mainMenuActive = true;
+    delay(1000);
+    return;
+  }
+  // Отображение текущего времени будильника
+  disp.displayClock(timerMinuteSetTmp, timerSecondSetTmp);
+  disp.point(true);
+  delay(50);
 }
 
 // Таймер
@@ -1017,12 +1027,15 @@ void menu()
       disp.displayByte(_C, _h, _r, _o);
       if (btn2.click())
       {
+        btn2.reset();
         if (timerOn)
         {
-          // показать таймер
         }
         if (!timerOn)
         {
+          mainMenuActive = false;
+          setTimerActive = true;
+          setTimerInitialized = false;
           setTimer();
         }
       }
