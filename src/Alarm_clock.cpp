@@ -162,7 +162,13 @@ uint32_t setVolTimer;
 
 // ===== PLAY MUSIC MENU =====
 bool playMusicMenuActive = false;
-uint8_t playMusicMenuItem = 0;
+int8_t playMusicMenuItem = 0;
+
+// ===== SET VOLUME MUSIC =====
+bool setVolumeMusicActive = false;
+bool setVolumeMusicInitialized = false;
+uint8_t currentMusicVolume = 20;
+uint8_t setVolumeMusicTmp;
 
 //     BUTTON HOLD CHANGING
 uint32_t lastHourChangeTime = 0;
@@ -304,6 +310,11 @@ void loop()
   if (playMusicMenuActive)
   {
     playMusicMenu();
+  }
+
+  if (setVolumeMusicActive)
+  {
+    setVolumeMusic();
   }
 
   // Обновление времени из rtc модуля DS3231
@@ -1363,7 +1374,7 @@ void playMusicMenu()
 {
   if (playMusicMenuActive)
   {
-    //playMusicDisplayOfTimer = millis();
+    // playMusicDisplayOfTimer = millis();
 
     disp.point(false);
     if (btn3.click())
@@ -1463,7 +1474,9 @@ void playMusicMenu()
       if (btn2.click())
       {
         btn2.reset();
-        setVolumeMusic();
+        playMusicMenuActive = false;
+        setVolumeMusicActive = true;
+        setVolumeMusicInitialized = false;
       }
       if (btn1.click()) // Выход из меню
       {
@@ -1535,52 +1548,62 @@ void stopMusic()
 
 void setVolumeMusic()
 {
-  byte currentVolume = 20;
-
-  while (true)
+  if (!setVolumeMusicInitialized)
   {
-    updateButtons();
-
-    // Увеличение громкости
-    if (btn4.click())
-    {
-      if (currentVolume < 30)
-      { // Максимальная громкость 30
-        currentVolume++;
-        myMP3.volume(currentVolume);
-      }
-    }
-
-    // Уменьшение громкости
-    if (btn3.click())
-    {
-      if (currentVolume > 0)
-      { // Минимальная громкость 0
-        currentVolume--;
-        myMP3.volume(currentVolume);
-      }
-    }
-
-    // Подтверждение выбора
-    if (btn2.click())
-    {
-      disp.displayByte(_d, _O, _n, _E);
-      delay(1000);
-      break;
-    }
-
-    // Выход без сохранения
-    if (btn1.click())
-    {
-      disp.displayByte(_E, _S, _C, _empty);
-      delay(1000);
-      break;
-    }
-
-    // Отображение текущего уровня громкости
-    disp.displayInt(currentVolume);
-    delay(50); // Уменьшено с 100 до 50 мс
+    setVolumeMusicTmp = currentMusicVolume;
+    setVolumeMusicInitialized = true;
+    delay(500);
+    disp.displayInt(setVolumeMusicTmp);
+    myMP3.volume(setVolumeMusicTmp);
+    delay(50);
   }
+
+  // Увеличение громкости
+  if (btn4.click())
+  {
+    if (currentMusicVolume < 30)
+    { // Максимальная громкость 30
+      setVolumeMusicTmp++;
+      myMP3.volume(setVolumeMusicTmp);
+    }
+  }
+
+  // Уменьшение громкости
+  if (btn3.click())
+  {
+    if (currentMusicVolume > 0)
+    { // Минимальная громкость 0
+      setVolumeMusicTmp--;
+      myMP3.volume(setVolumeMusicTmp);
+    }
+  }
+
+  // Подтверждение выбора
+  if (btn2.click())
+  {
+    currentMusicVolume = setVolumeMusicTmp;
+    myMP3.volume(currentMusicVolume);
+    disp.displayByte(_d, _O, _n, _E);
+    setVolumeMusicActive = false;
+    playMusicMenuActive = true;
+    delay(1000);
+    return;
+  }
+
+  // Выход без сохранения
+  if (btn1.click())
+  {
+    myMP3.volume(currentMusicVolume);
+    disp.displayByte(_E, _S, _C, _empty);
+    setVolumeMusicActive = false;
+    playMusicMenuActive = true;
+    delay(1000);
+    return;
+  }
+
+  // Отображение текущего уровня громкости
+  disp.displayInt(setVolumeMusicTmp);
+  delay(50); // Уменьшено с 100 до 50 мс
 }
 
 // Включение фонарика по нажатию BTN_4
