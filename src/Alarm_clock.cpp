@@ -160,6 +160,10 @@ bool setVolumeInitialized = false;
 uint8_t setVolumeTmp;
 uint32_t setVolTimer;
 
+// ===== PLAY MUSIC MENU =====
+bool playMusicMenuActive = false;
+uint8_t playMusicMenuItem = 0;
+
 //     BUTTON HOLD CHANGING
 uint32_t lastHourChangeTime = 0;
 uint32_t lastMinuteChangeTime = 0;
@@ -295,6 +299,11 @@ void loop()
   if (setVolumeActive)
   {
     setVolume();
+  }
+
+  if (playMusicMenuActive)
+  {
+    playMusicMenu();
   }
 
   // Обновление времени из rtc модуля DS3231
@@ -1022,7 +1031,9 @@ void menu()
       disp.displayByte(_P, _L, _A, _Y);
       if (btn2.click())
       {
-        playMusicMenu();
+        btn2.reset();
+        mainMenuActive = false;
+        playMusicMenuActive = true;
       }
     }
     if (mainMenuItem == 5)
@@ -1350,44 +1361,45 @@ void setVolume()
 // Меню воспроизведения музыки
 void playMusicMenu()
 {
-  playMusicDisplayOfTimer = millis();
-  mainMenuItem = 0;
-  // Основной цикл меню
-  while (true)
+  if (playMusicMenuActive)
   {
-    updateButtons();
+    //playMusicDisplayOfTimer = millis();
 
     disp.point(false);
     if (btn3.click())
     {
-      mainMenuItem = mainMenuItem - 1;
-      if (mainMenuItem < 0)
+      playMusicMenuItem = playMusicMenuItem - 1;
+      if (playMusicMenuItem < 0)
       {
-        mainMenuItem = 3;
+        playMusicMenuItem = 3;
       }
     }
     if (btn4.click())
     {
-      mainMenuItem = mainMenuItem + 1;
-      if (mainMenuItem > 3)
+      playMusicMenuItem = playMusicMenuItem + 1;
+      if (playMusicMenuItem > 3)
       {
-        mainMenuItem = 0;
+        playMusicMenuItem = 0;
       }
     }
-    if (mainMenuItem == 0)
+    if (playMusicMenuItem == 0)
     {
       if (!isPlaying)
       {
         disp.displayByte(_S, _t, _r, _t);
         if (btn2.click())
         {
+          btn2.reset();
           playMusic();
         }
         if (btn1.click()) // Выход из меню
         {
           disp.displayByte(_E, _S, _C, _empty);
+          playMusicMenuActive = false;
+          mainMenuActive = true;
+          btn1.reset();
           delay(1000);
-          break;
+          return;
         }
       }
       else
@@ -1395,73 +1407,89 @@ void playMusicMenu()
         disp.displayByte(_S, _t, _o, _P);
         if (btn2.click())
         {
+          btn2.reset();
           stopMusic();
         }
         if (btn1.click()) // Выход из меню
         {
           disp.displayByte(_E, _S, _C, _empty);
+          playMusicMenuActive = false;
+          mainMenuActive = true;
+          btn1.reset();
           delay(1000);
-          break;
+          return;
         }
       }
     }
-    if (mainMenuItem == 1)
+    if (playMusicMenuItem == 1)
     {
       disp.displayByte(_S, _L, _E, _d);
       if (btn2.click())
       {
+        btn2.reset();
         nextTrack();
       }
       if (btn1.click()) // Выход из меню
       {
         disp.displayByte(_E, _S, _C, _empty);
+        playMusicMenuActive = false;
+        mainMenuActive = true;
+        btn1.reset();
         delay(1000);
-        break;
+        return;
       }
     }
-    if (mainMenuItem == 2)
+    if (playMusicMenuItem == 2)
     {
       disp.displayByte(_P, _r, _E, _d);
       if (btn2.click())
       {
+        btn2.reset();
         previousTrack();
       }
       if (btn1.click()) // Выход из меню
       {
         disp.displayByte(_E, _S, _C, _empty);
+        playMusicMenuActive = false;
+        mainMenuActive = true;
+        btn1.reset();
         delay(1000);
-        break;
+        return;
       }
     }
-    if (mainMenuItem == 3)
+    if (playMusicMenuItem == 3)
     {
       disp.displayByte(_L, _o, _u, _d);
       if (btn2.click())
       {
+        btn2.reset();
         setVolumeMusic();
       }
       if (btn1.click()) // Выход из меню
       {
         disp.displayByte(_E, _S, _C, _empty);
+        playMusicMenuActive = false;
+        mainMenuActive = true;
+        btn1.reset();
         delay(1000);
-        break;
+        return;
       }
     }
-    if (millis() - playMusicDisplayOfTimer > 30000)
-    {
-      while (true)
-      {
-        disp.clear();
+    // if (millis() - playMusicDisplayOfTimer > 30000)
+    // {
+    //   while (true)
+    //   {
+    //     disp.clear();
 
-        updateButtons();
+    //     updateButtons();
 
-        if (btn1.click() || btn2.click() || btn3.click() || btn4.click())
-        {
-          playMusicDisplayOfTimer = millis();
-          break;
-        }
-      }
-    }
+    //     if (btn1.click() || btn2.click() || btn3.click() || btn4.click())
+    //     {
+    //       playMusicDisplayOfTimer = millis();
+    //       break;
+    //     }
+    //   }
+    // }
   }
 }
 
