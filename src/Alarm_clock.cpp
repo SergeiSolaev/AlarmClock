@@ -7,7 +7,7 @@
 #include "GyverPower.h"
 #include "EncButton.h"
 
-#define FW_VERSION "1.4.6"
+#define FW_VERSION "1.5.0"
 
 // ===== HARDWARE =====
 
