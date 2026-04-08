@@ -84,10 +84,16 @@ uint8_t alarmVolumeDefault = 20;
 
 // ===== COUNTDOWN TIMER =====
 
-bool timerOn = false;
+bool timerActive = false;
 bool timerFinished = false;
 bool displayBlinking = false;
 bool timerDisplayState = true;
+bool timerInitialized = false;
+
+uint32_t timerStartValue;    // начальное значение таймера в миллисекундах
+uint32_t timerCurrentRemain; // оставшееся время
+uint32_t timerPrevUpdate;    // время последнего обновления
+uint32_t displayToggleTimer; // таймер для мигания дисплеем
 
 // Значение таймера по умолчанию
 uint32_t timerMinuteSet = 00;
@@ -213,6 +219,7 @@ void menu();
 void alarmOnOffMenu();
 void setAlarm();
 void setTime();
+void setTimer();
 void setVolume();
 void playMusicMenu();
 void playMusic();
@@ -313,6 +320,11 @@ void loop()
     setTimer();
   }
 
+  if (timerActive)
+  {
+    runCountDownTimer();
+  }
+
   if (setVolumeActive)
   {
     setVolume();
@@ -339,7 +351,7 @@ void loop()
   // Показ времени на индикаторе
   if (millis() - displayClockTimer > 500)
   {
-    if (!menuActive)
+    if (!menuActive && !timerActive)
     {
       displayClockTimer = millis();
       displayClock(hrs, min);
@@ -625,11 +637,12 @@ void setTimer()
   {
     timerMinuteSet = timerMinuteSetTmp;
     timerSecondSet = timerSecondSetTmp;
-    timerOn = true;
+    setTimerActive = false;
+    timerActive = true;
+    timerInitialized = false;
     disp.point(false);
     disp.displayByte(_S, _t, _r, _t);
     delay(500);
-    runCountDownTimer();
     return;
   }
   if (btn1.click()) // Выход из меню
@@ -650,134 +663,135 @@ void setTimer()
 // Таймер
 void runCountDownTimer()
 {
-  uint32_t timerStartValue = (timerMinuteSet * 60UL + timerSecondSet) * 1000UL; // начальное значение таймера в миллисекундах
-  uint32_t timerCurrentRemain = timerStartValue;                                // оставшееся время
-  uint32_t timerPrevUpdate = millis();                                          // время последнего обновления
-  uint32_t displayToggleTimer = millis();                                       // таймер для мигания дисплеем
-  displayClockTimer = millis();
-  timerDisplayState = true;
-  secondsDots = true;
-
-  // Основной цикл работы таймера
-  while (true)
+  if (!timerInitialized)
   {
-    uint32_t currentTime = millis();
+    timerStartValue = (timerMinuteSet * 60UL + timerSecondSet) * 1000UL; // начальное значение таймера в миллисекундах
+    timerCurrentRemain = timerStartValue;                                // оставшееся время
+    timerPrevUpdate = millis();                                          // время последнего обновления
+    displayToggleTimer = millis();                                       // таймер для мигания дисплеем
+    displayClockTimer = millis();
+    timerFinished = false;
+    displayBlinking = false;
+    timerDisplayState = true;
+    secondsDots = true;
+    timerInitialized = true;
+  }
 
-    updateButtons();
+  uint32_t currentTime = millis();
 
-    // Обработка кнопки 1: Выход из таймера (до окончания)
-    if (btn1.click() && !timerFinished)
+  // Обработка кнопки 1: Выход из таймера (до окончания)
+  if (btn1.click() && !timerFinished)
+  {
+    timerActive = false;
+    disp.point(false);
+    disp.displayByte(_E, _S, _C, _empty);
+    delay(1000);
+    return;
+  }
+
+  // Обработка длинного нажатия кнопки 2: Вкл/Выкл дисплея
+  if (btn2.hold())
+  {                     // Используем hold() для длинного нажатия (настроен на 2 сек)
+    if (!timerFinished) // Если таймер еще не закончился
     {
-      timerOn = false;
-      disp.point(false);
-      disp.displayByte(_E, _S, _C, _empty);
-      delay(1000);
-      return;
-    }
-
-    // Обработка длинного нажатия кнопки 2: Вкл/Выкл дисплея
-    if (btn2.hold())
-    {                     // Используем hold() для длинного нажатия (настроен на 2 сек)
-      if (!timerFinished) // Если таймер еще не закончился
+      timerDisplayState = !timerDisplayState; // переключаем состояние отображения часов
+      if (timerDisplayState)
       {
-        timerDisplayState = !timerDisplayState; // переключаем состояние отображения часов
-        if (timerDisplayState)
-        {
-          disp.displayClock(timerCurrentRemain / 60000, (timerCurrentRemain % 60000) / 1000);
-          disp.point(true); // восстанавливаем точки после включения
-        }
-        else
-        {
-          disp.clear();
-          disp.point(false);
-        }
+        disp.displayClock(timerCurrentRemain / 60000, (timerCurrentRemain % 60000) / 1000);
+        disp.point(true); // восстанавливаем точки после включения
       }
-      // Если таймер закончился, длинное нажатие 2 не влияет на вкл/выкл,
-      // только короткое нажатие останавливает сигнал.
-    }
-
-    // Обработка короткого нажатия кнопки 2: Включить дисплей (если он был выключен)
-    if (btn2.click() && !timerDisplayState && !timerFinished)
-    { // Если дисплей выключен и таймер не окончен
-      timerDisplayState = true;
-      disp.displayClock(timerCurrentRemain / 60000, (timerCurrentRemain % 60000) / 1000);
-      disp.point(true); // восстанавливаем точки
-    }
-
-    // Проверяем, прошла ли одна секунда для обновления таймера
-    if (currentTime - timerPrevUpdate >= 1000 && !timerFinished)
-    {
-      timerCurrentRemain -= 1000; // уменьшаем оставшееся время на 1 секунду
-      timerPrevUpdate = currentTime;
-
-      // Проверяем, закончился ли таймер
-      if (timerCurrentRemain <= 0)
+      else
       {
-        timerCurrentRemain = 0; // убедимся, что не уйдёт в отрицательные значения
-        timerFinished = true;
-        displayBlinking = true; // включаем режим мигания
-        startAlarm();
-      }
-    }
-
-    // Обновляем отображение на индикаторе
-    if (currentTime - displayClockTimer >= 500)
-    {
-      if (timerDisplayState && !timerFinished)
-      {
-        displayClockTimer = millis();
-        byte mins = timerCurrentRemain / 60000;
-        byte secs = (timerCurrentRemain % 60000) / 1000;
-        displayClock(mins, secs);
-      }
-    }
-
-    // Режим мигания дисплеем после окончания таймера
-    if (displayBlinking)
-    {
-      if (currentTime - displayToggleTimer >= 1000) // каждую секунду
-      {
-        timerDisplayState = !timerDisplayState; // переключаем состояние
-        if (timerDisplayState)
-        {
-          byte mins = timerCurrentRemain / 60000;
-          byte secs = (timerCurrentRemain % 60000) / 1000;
-          disp.displayClock(mins, secs);
-          disp.point(true);
-        }
-        else
-        {
-          disp.clear();
-          disp.point(false);
-        }
-        displayToggleTimer = currentTime; // обновляем таймер мигания
-      }
-    }
-
-    // Обновление яркости
-    if (currentTime - brightnessControlTimer >= 500 && clockOn)
-    {
-      brightnessControlTimer = millis();
-      brightnessControl();
-    }
-
-    // Обработка остановки сигнала после окончания таймера
-    // Стоп можно сделать по любой кнопке (кроме 2 hold), например, 1, 2 click, 3, 4
-    if (timerFinished)
-    {
-      if (btn1.click() || btn2.click() || btn3.click() || btn4.click())
-      {
-        // Останавливаем звуковой сигнал
-        stopAlarm();
-        // Выходим из цикла
-        timerOn = false;
-        timerFinished = false; // сбрасываем флаг для следующего запуска
-        displayBlinking = false;
-        clockOn = true; // восстанавливаем отображение времени
         disp.clear();
         disp.point(false);
-        break; // выходим из основного цикла таймера
       }
+    }
+    // Если таймер закончился, длинное нажатие 2 не влияет на вкл/выкл,
+    // только короткое нажатие останавливает сигнал.
+  }
+
+  // Обработка короткого нажатия кнопки 2: Включить дисплей (если он был выключен)
+  if (btn2.click() && !timerDisplayState && !timerFinished)
+  { // Если дисплей выключен и таймер не окончен
+    timerDisplayState = true;
+    disp.displayClock(timerCurrentRemain / 60000, (timerCurrentRemain % 60000) / 1000);
+    disp.point(true); // восстанавливаем точки
+  }
+
+  // Проверяем, прошла ли одна секунда для обновления таймера
+  if (currentTime - timerPrevUpdate >= 1000 && !timerFinished)
+  {
+    timerCurrentRemain -= 1000; // уменьшаем оставшееся время на 1 секунду
+    timerPrevUpdate = currentTime;
+
+    // Проверяем, закончился ли таймер
+    if (timerCurrentRemain <= 0)
+    {
+      timerCurrentRemain = 0; // убедимся, что не уйдёт в отрицательные значения
+      timerFinished = true;
+      displayBlinking = true; // включаем режим мигания
+      startAlarm();
+    }
+  }
+
+  // Обновляем отображение на индикаторе
+  if (currentTime - displayClockTimer >= 500)
+  {
+    if (timerDisplayState && !timerFinished)
+    {
+      displayClockTimer = millis();
+      byte mins = timerCurrentRemain / 60000;
+      byte secs = (timerCurrentRemain % 60000) / 1000;
+      displayClock(mins, secs);
+    }
+  }
+
+  // Режим мигания дисплеем после окончания таймера
+  if (displayBlinking)
+  {
+    if (currentTime - displayToggleTimer >= 1000) // каждую секунду
+    {
+      timerDisplayState = !timerDisplayState; // переключаем состояние
+      if (timerDisplayState)
+      {
+        byte mins = timerCurrentRemain / 60000;
+        byte secs = (timerCurrentRemain % 60000) / 1000;
+        disp.displayClock(mins, secs);
+        disp.point(true);
+      }
+      else
+      {
+        disp.clear();
+        disp.point(false);
+      }
+      displayToggleTimer = currentTime; // обновляем таймер мигания
+    }
+  }
+
+  // Обновление яркости
+  if (currentTime - brightnessControlTimer >= 500 && clockOn)
+  {
+    brightnessControlTimer = millis();
+    brightnessControl();
+  }
+
+  // Обработка остановки сигнала после окончания таймера
+  // Стоп можно сделать по любой кнопке (кроме 2 hold), например, 1, 2 click, 3, 4
+  if (timerFinished)
+  {
+    if (btn1.click() || btn2.click() || btn3.click() || btn4.click())
+    {
+      // Останавливаем звуковой сигнал
+      stopAlarm();
+      // Выходим из цикла
+      timerActive = false;
+      mainMenuActive = true;
+      timerFinished = false; // сбрасываем флаг для следующего запуска
+      displayBlinking = false;
+      clockOn = true; // восстанавливаем отображение времени
+      disp.clear();
+      disp.point(false);
+      return; // выходим из основного цикла таймера
     }
   }
 }
@@ -1028,10 +1042,10 @@ void menu()
       if (btn2.click())
       {
         btn2.reset();
-        if (timerOn)
+        if (timerActive)
         {
         }
-        if (!timerOn)
+        if (!timerActive)
         {
           mainMenuActive = false;
           setTimerActive = true;
