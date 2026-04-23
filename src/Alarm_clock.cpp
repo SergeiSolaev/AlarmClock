@@ -683,6 +683,8 @@ void runCountDownTimer()
   if (btn1.click() && !timerFinished)
   {
     timerActive = false;
+    timerInitialized = false;
+    mainMenuActive = true;
     disp.point(false);
     disp.displayByte(_E, _S, _C, _empty);
     delay(1000);
