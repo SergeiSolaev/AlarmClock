@@ -7,7 +7,7 @@
 #include "GyverPower.h"
 #include "EncButton.h"
 
-#define FW_VERSION "1.5.1"
+#define FW_VERSION "1.5.2"
 
 // ===== HARDWARE =====
 
@@ -108,6 +108,10 @@ bool isPlaying = false;
 // ===== POWER / BATTERY =====
 
 bool batteryDischarge;
+
+// ===== BRIGHTNESS CONTROL =====
+
+int8_t currentBrightnessLevel = -1;
 
 // ===== DISPLAY =====
 
@@ -929,8 +933,39 @@ void alarmStopTime()
 void brightnessControl()
 {
   int light = analogRead(LIGHT_SENSOR);
-  int brightnessPower = map(light, 0, 1023, 0, 7);
-  disp.brightness(brightnessPower);
+  const int adcStep = 128;      // 1024 / 8 уровней яркости
+  const int hysteresisAdc = 20; // Гистерезис для борьбы с мерцанием на границах
+  int targetBrightness = constrain(light / adcStep, 0, 7);
+
+  // Инициализируем текущий уровень только при первом запуске
+  if (currentBrightnessLevel < 0)
+  {
+    currentBrightnessLevel = targetBrightness;
+    disp.brightness(currentBrightnessLevel);
+    return;
+  }
+
+  // Повышаем яркость только при уверенном пересечении верхней границы
+  if (targetBrightness > currentBrightnessLevel)
+  {
+    int upperThreshold = ((currentBrightnessLevel + 1) * adcStep) + hysteresisAdc;
+    if (light >= upperThreshold)
+    {
+      currentBrightnessLevel = targetBrightness;
+    }
+  }
+
+  // Понижаем яркость только при уверенном пересечении нижней границы
+  if (targetBrightness < currentBrightnessLevel)
+  {
+    int lowerThreshold = (currentBrightnessLevel * adcStep) - hysteresisAdc;
+    if (light <= lowerThreshold)
+    {
+      currentBrightnessLevel = targetBrightness;
+    }
+  }
+
+  disp.brightness(currentBrightnessLevel);
 }
 
 // Измерение напряжения батареи
