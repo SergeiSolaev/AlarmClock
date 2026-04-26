@@ -149,6 +149,7 @@ uint8_t clockMonth;
 int clockYear;
 bool setTimeMenuActive = false;
 bool setTimeMenuDateTimeUpdate = false;
+uint8_t setTimeStage = 0;
 
 // ===== ALARM ON/OFF MENU =====
 bool alarmOnOffMenuActive = false;
@@ -1244,61 +1245,143 @@ void setTime()
       clockMonth = month;
       clockYear = year;
       setTimeMenuDateTimeUpdate = true;
+      setTimeStage = 0;
     }
 
     uint32_t currentTime = millis();
 
-    // Увеличение часов при клике кнопки 3 (однократное нажатие)
+    // Кнопка 3: изменить текущее поле установки времени/даты
     if (btn3.click())
     {
-      clockHrsTmp = (clockHrsTmp + 1) % 24; // Увеличиваем часы
+      if (setTimeStage == 0)
+      {
+        clockHrsTmp = (clockHrsTmp + 1) % 24;
+      }
+      else if (setTimeStage == 1)
+      {
+        clockYear++;
+        if (clockYear > 2099)
+        {
+          clockYear = 2000;
+        }
+      }
+      else if (setTimeStage == 2)
+      {
+        clockMonth = (clockMonth % 12) + 1;
+      }
+      else if (setTimeStage == 3)
+      {
+        clockDate = (clockDate % 31) + 1;
+      }
     }
-
-    // Увеличение часов при удержании кнопки 3
+    // Удержание кнопки 3: быстрое изменение текущего поля
     if (btn3.pressing())
-    { // кнопка нажата в данный момент
+    {
       uint16_t pressDuration = btn3.pressFor();
       if (pressDuration >= INITIAL_DELAY)
       {
         if (lastHourChangeTime == 0 || (currentTime - lastHourChangeTime >= CHANGE_INTERVAL))
         {
-          clockHrsTmp = (clockHrsTmp + 1) % 24;
+          if (setTimeStage == 0)
+          {
+            clockHrsTmp = (clockHrsTmp + 1) % 24;
+          }
+          else if (setTimeStage == 1)
+          {
+            clockYear++;
+            if (clockYear > 2099)
+            {
+              clockYear = 2000;
+            }
+          }
+          else if (setTimeStage == 2)
+          {
+            clockMonth = (clockMonth % 12) + 1;
+          }
+          else if (setTimeStage == 3)
+          {
+            clockDate = (clockDate % 31) + 1;
+          }
           lastHourChangeTime = currentTime;
         }
       }
     }
 
-    // Увеличение минут при клике кнопки 4 (однократное нажатие)
+    // Кнопка 4: изменить текущее поле установки времени/даты
     if (btn4.click())
     {
-      clockMinTmp = (clockMinTmp + 1) % 60; // Увеличиваем минуты
+      if (setTimeStage == 0)
+      {
+        clockMinTmp = (clockMinTmp + 1) % 60;
+      }
+      else if (setTimeStage == 1)
+      {
+        clockYear--;
+        if (clockYear < 2000)
+        {
+          clockYear = 2099;
+        }
+      }
+      else if (setTimeStage == 2)
+      {
+        clockMonth = (clockMonth == 1) ? 12 : clockMonth - 1;
+      }
+      else if (setTimeStage == 3)
+      {
+        clockDate = (clockDate == 1) ? 31 : clockDate - 1;
+      }
     }
 
-    // Увеличение минут при удержании кнопки 4
+    // Удержание кнопки 4: быстрое изменение текущего поля
     if (btn4.pressing())
-    { // кнопка нажата в данный момент
+    {
       uint16_t pressDuration = btn4.pressFor();
       if (pressDuration >= INITIAL_DELAY)
       {
         if (lastMinuteChangeTime == 0 || (currentTime - lastMinuteChangeTime >= CHANGE_INTERVAL))
         {
-          clockMinTmp = (clockMinTmp + 1) % 60;
+          if (setTimeStage == 0)
+          {
+            clockMinTmp = (clockMinTmp + 1) % 60;
+          }
+          else if (setTimeStage == 1)
+          {
+            clockYear--;
+            if (clockYear < 2000)
+            {
+              clockYear = 2099;
+            }
+          }
+          else if (setTimeStage == 2)
+          {
+            clockMonth = (clockMonth == 1) ? 12 : clockMonth - 1;
+          }
+          else if (setTimeStage == 3)
+          {
+            clockDate = (clockDate == 1) ? 31 : clockDate - 1;
+          }
           lastMinuteChangeTime = currentTime;
         }
       }
     }
 
-    // Подтверждение установки
+    // Переход между этапами: время -> год -> месяц -> день -> подтверждение
     if (btn2.click())
     {
-      // Создаем объект DateTime с новым временем и текущей датой
+      if (setTimeStage < 4)
+      {
+        setTimeStage++;
+        btn2.reset();
+        delay(200);
+        return;
+      }
       DateTime newTime(clockYear, clockMonth, clockDate, clockHrsTmp, clockMinTmp, 0);
-      rtc.adjust(newTime); // Устанавливаем новое время
-      // Обновляем глобальные переменные времени
+      rtc.adjust(newTime);
       updateDateTime();
       setTimeMenuActive = false;
       mainMenuActive = true;
       setTimeMenuDateTimeUpdate = false;
+      setTimeStage = 0;
       disp.point(false);
       disp.displayByte(_d, _O, _n, _E);
       btn2.reset();
@@ -1310,15 +1393,41 @@ void setTime()
       setTimeMenuActive = false;
       mainMenuActive = true;
       setTimeMenuDateTimeUpdate = false;
+      setTimeStage = 0;
       disp.point(false);
       disp.displayByte(_E, _S, _C, _empty);
       btn1.reset();
       delay(1000);
       return;
     }
-    // Отображение текущего времени
-    disp.displayClock(clockHrsTmp, clockMinTmp);
-    delay(50); // Уменьшено с 100 до 50 мс для более быстрого обновления
+
+    if (setTimeStage == 0)
+    {
+      disp.displayClock(clockHrsTmp, clockMinTmp);
+      disp.point(true);
+    }
+    else if (setTimeStage == 1)
+    {
+      disp.point(false);
+      disp.displayInt(clockYear);
+    }
+    else if (setTimeStage == 2)
+    {
+      disp.point(false);
+      disp.displayInt(clockMonth);
+    }
+    else if (setTimeStage == 3)
+    {
+      disp.point(false);
+      disp.displayInt(clockDate);
+    }
+    else
+    {
+      disp.point(false);
+      disp.displayByte(_P, _r, _E, _S);
+    }
+
+    delay(50); 
   }
 }
 
