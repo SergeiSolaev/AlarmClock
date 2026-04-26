@@ -210,7 +210,6 @@ void brightnessControl();
 double voltageMeasure();
 void showVoltage(double voltage);
 void batteryControl(double voltage);
-void showTemperature();
 void showDate();
 void startAlarm();
 void stopAlarm();
@@ -387,7 +386,6 @@ void loop()
   // Показ даты
   if (btn2.click() && !buttonsBlocked && !menuActive)
   {
-    showTemperature();
     showDate();
   }
 
@@ -986,21 +984,6 @@ void batteryControl(double voltage)
   {
     batteryDischarge = false;
   }
-}
-
-// Показать температуру
-void showTemperature()
-{
-  const uint8_t DEG_SYMBOL_MASK = 0b01100011;
-  float temperature_f = rtc.getTemperature();
-  // Целая часть
-  int whole_part = (int)temperature_f;
-  disp.clear();
-  disp.point(false);
-  disp.displayClock(whole_part, 0);
-  disp.displayByte(2, DEG_SYMBOL_MASK);
-  disp.displayByte(3, _C);
-  delay(1500);
 }
 
 // Показать дату
