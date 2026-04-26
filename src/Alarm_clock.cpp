@@ -7,7 +7,7 @@
 #include "GyverPower.h"
 #include "EncButton.h"
 
-#define FW_VERSION "1.5.0"
+#define FW_VERSION "1.5.1"
 
 // ===== HARDWARE =====
 
@@ -229,6 +229,10 @@ void nextTrack();
 void stopMusic();
 void setVolumeMusic();
 void flashLight();
+bool isLeapYear(uint16_t yearToCheck);
+uint8_t getDaysInMonth(uint16_t yearToCheck, uint8_t monthToCheck);
+bool isValidDate(uint16_t yearToCheck, uint8_t monthToCheck, uint8_t dayToCheck);
+void normalizeClockDate();
 
 void setup()
 {
@@ -530,6 +534,57 @@ void updateDateTime()
   hrs = now.hour();
   min = now.minute();
   sec = now.second();
+}
+
+bool isLeapYear(uint16_t yearToCheck)
+{
+  return (yearToCheck % 4 == 0 && yearToCheck % 100 != 0) || (yearToCheck % 400 == 0);
+}
+
+uint8_t getDaysInMonth(uint16_t yearToCheck, uint8_t monthToCheck)
+{
+  if (monthToCheck < 1 || monthToCheck > 12)
+  {
+    return 31;
+  }
+
+  if (monthToCheck == 2)
+  {
+    return isLeapYear(yearToCheck) ? 29 : 28;
+  }
+
+  if (monthToCheck == 4 || monthToCheck == 6 || monthToCheck == 9 || monthToCheck == 11)
+  {
+    return 30;
+  }
+
+  return 31;
+}
+
+bool isValidDate(uint16_t yearToCheck, uint8_t monthToCheck, uint8_t dayToCheck)
+{
+  if (monthToCheck < 1 || monthToCheck > 12)
+  {
+    return false;
+  }
+
+  uint8_t maxDays = getDaysInMonth(yearToCheck, monthToCheck);
+  return dayToCheck >= 1 && dayToCheck <= maxDays;
+}
+
+void normalizeClockDate()
+{
+  uint8_t maxDays = getDaysInMonth(clockYear, clockMonth);
+
+  if (clockDate < 1)
+  {
+    clockDate = 1;
+  }
+
+  if (clockDate > maxDays)
+  {
+    clockDate = maxDays;
+  }
 }
 
 // Опрос кнопок
@@ -1264,14 +1319,21 @@ void setTime()
         {
           clockYear = 2000;
         }
+        normalizeClockDate();
       }
       else if (setTimeStage == 2)
       {
         clockMonth = (clockMonth % 12) + 1;
+        normalizeClockDate();
       }
       else if (setTimeStage == 3)
       {
-        clockDate = (clockDate % 31) + 1;
+        uint8_t maxDays = getDaysInMonth(clockYear, clockMonth);
+        clockDate++;
+        if (clockDate > maxDays)
+        {
+          clockDate = 1;
+        }
       }
     }
     // Удержание кнопки 3: быстрое изменение текущего поля
@@ -1293,14 +1355,21 @@ void setTime()
             {
               clockYear = 2000;
             }
+            normalizeClockDate();
           }
           else if (setTimeStage == 2)
           {
             clockMonth = (clockMonth % 12) + 1;
+            normalizeClockDate();
           }
           else if (setTimeStage == 3)
           {
-            clockDate = (clockDate % 31) + 1;
+            uint8_t maxDays = getDaysInMonth(clockYear, clockMonth);
+            clockDate++;
+            if (clockDate > maxDays)
+            {
+              clockDate = 1;
+            }
           }
           lastHourChangeTime = currentTime;
         }
@@ -1321,14 +1390,17 @@ void setTime()
         {
           clockYear = 2099;
         }
+        normalizeClockDate();
       }
       else if (setTimeStage == 2)
       {
         clockMonth = (clockMonth == 1) ? 12 : clockMonth - 1;
+        normalizeClockDate();
       }
       else if (setTimeStage == 3)
       {
-        clockDate = (clockDate == 1) ? 31 : clockDate - 1;
+        uint8_t maxDays = getDaysInMonth(clockYear, clockMonth);
+        clockDate = (clockDate == 1) ? maxDays : clockDate - 1;
       }
     }
 
@@ -1351,14 +1423,17 @@ void setTime()
             {
               clockYear = 2099;
             }
+            normalizeClockDate();
           }
           else if (setTimeStage == 2)
           {
             clockMonth = (clockMonth == 1) ? 12 : clockMonth - 1;
+            normalizeClockDate();
           }
           else if (setTimeStage == 3)
           {
-            clockDate = (clockDate == 1) ? 31 : clockDate - 1;
+            uint8_t maxDays = getDaysInMonth(clockYear, clockMonth);
+            clockDate = (clockDate == 1) ? maxDays : clockDate - 1;
           }
           lastMinuteChangeTime = currentTime;
         }
@@ -1373,6 +1448,14 @@ void setTime()
         setTimeStage++;
         btn2.reset();
         delay(200);
+        return;
+      }
+      normalizeClockDate();
+      if (!isValidDate(clockYear, clockMonth, clockDate))
+      {
+        disp.point(false);
+        disp.displayByte(_E, _r, _r, _empty);
+        delay(1000);
         return;
       }
       DateTime newTime(clockYear, clockMonth, clockDate, clockHrsTmp, clockMinTmp, 0);
@@ -1427,7 +1510,7 @@ void setTime()
       disp.displayByte(_P, _r, _E, _S);
     }
 
-    delay(50); 
+    delay(50);
   }
 }
 
